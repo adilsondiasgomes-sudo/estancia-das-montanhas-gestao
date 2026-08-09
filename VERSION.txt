@@ -1,28 +1,28 @@
 Sistema de Gestao | Sitio Estancia das Montanhas
-Versao: V18.6
+Versao: V18.7
 Data: 09/08/2026
 
 Natureza:
-- Versao dedicada ao modulo de backup, importacao, mescla e zeramento controlado.
+- Versao dedicada ao Manual de Uso do sistema, integrado ao Registro Tecnico.
 
 Melhorias implementadas:
-- Modulo Backup ganhou painel proprio com contagem dos principais registros da base.
-- Exportacao completa passa a identificar a versao V18.6 no JSON e no nome do arquivo.
-- Importacao por mescla adiciona registros novos e atualiza registros com o mesmo identificador.
-- Substituicao de base permanece disponivel, mas com snapshot local antes da operacao.
-- Zerar banco do sistema foi incluído com dupla confirmacao e digitacao obrigatoria de ZERAR.
-- Em modo cloud, mescla, substituicao e zeramento sincronizam por registro, preservando a trava contra saveState em lote.
-- Registro Tecnico recebeu entrada V18.6 documentando a governanca do backup.
-- A V18.6 herda dados locais da V18.5 na primeira abertura.
+- Registro Tecnico recebeu botao para abrir o Manual de Uso.
+- Logo lateral recebeu icone discreto de ajuda para acesso rapido ao manual.
+- Identidade visual em tela cheia recebeu atalho complementar para o manual.
+- Manual organizado em linguagem direta, simples e fluida para usuario nao tecnico.
+- Conteudo inicia pelos cadastros basicos: cliente, espaco, reserva e hospedes.
+- Conteudo avanca para agenda, check-in/out, financeiro, documentos e backup.
+- Registro Tecnico recebeu entrada V18.7 documentando a rodada de orientacao de uso.
+- A V18.7 herda dados locais da V18.6 na primeira abertura.
 
 Limites assumidos:
-- A operacao de zeramento remove dados operacionais do app, nao usuarios do Supabase Auth.
-- Snapshots de seguranca ficam no navegador local e nao substituem o backup baixado em arquivo.
-- Restauracao parcial de falha em cloud deve ser conferida por auditoria posterior se houver queda de rede durante a sincronizacao.
+- Esta versao nao altera schema do Supabase.
+- Esta versao nao altera regras de negocio de reservas, financeiro ou backup.
+- O manual e uma orientacao operacional dentro do sistema, nao substitui treinamento presencial.
 
 Validacao recomendada:
-- Exportar backup e conferir se o arquivo baixa como backup-estancia-v18-6.
-- Mesclar o backup recem-exportado e confirmar que a base permanece integra.
-- Testar substituicao com o mesmo backup em ambiente de homologacao.
-- Testar o fluxo de zeramento somente depois de exportar backup e confirmar a digitacao ZERAR.
+- Abrir o Registro Tecnico e testar o botao Manual de Uso.
+- Clicar no icone discreto da logo lateral e confirmar abertura do manual.
+- Abrir a identidade visual em tela cheia e testar o atalho do manual.
+- Conferir se a versao aparece como V18.7 no login, logo e Registro Tecnico.
 - Rodar `node --check` nos arquivos JavaScript antes de publicar.

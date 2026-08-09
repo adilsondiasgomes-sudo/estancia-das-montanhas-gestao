@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Estância das Montanhas | Gestão V18.6</title>
+  <title>Estância das Montanhas | Gestão V18.7</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="locked">
@@ -16,7 +16,7 @@
     <form class="login-card" id="login-form">
       <button type="button" class="login-logo-large brand-open" data-action="open-brand" aria-label="Abrir identidade visual da Estância das Montanhas"></button>
       <h1>Entrar no sistema</h1>
-      <p class="muted">Acesso gerencial e operacional | V18.6</p>
+      <p class="muted">Acesso gerencial e operacional | V18.7</p>
       <label>E-mail<input id="login-email" type="email" autocomplete="username" required></label>
       <label>Senha<input id="login-password" type="password" autocomplete="current-password" required></label>
       <button class="primary" type="submit">Entrar</button>
@@ -26,7 +26,10 @@
   </section>
 
   <aside class="sidebar">
-    <button type="button" class="sidebar-visual-brand brand-open" data-action="open-brand" aria-label="Abrir identidade visual da Estância das Montanhas"></button>
+    <div class="sidebar-brand-wrap">
+      <button type="button" class="sidebar-visual-brand brand-open" data-action="open-brand" aria-label="Abrir identidade visual da Estância das Montanhas"></button>
+      <button type="button" class="brand-help-button" data-action="go-view" data-id="userManual" title="Manual de Uso" aria-label="Abrir Manual de Uso">?</button>
+    </div>
     <nav class="nav" id="nav"></nav>
     <div class="sidebar-card"><span>Perfil ativo</span><strong id="active-role">-</strong><button class="ghost full" id="logout">Sair</button></div>
     <div class="sidebar-card"><span>WhatsApp comercial</span><a href="https://wa.me/5531986932446" target="_blank" rel="noreferrer">31 98693-2446</a></div>
@@ -50,7 +53,8 @@
 
   <dialog id="brand-viewer" class="brand-viewer" aria-label="Identidade visual Estância das Montanhas">
     <button class="icon-button brand-close" data-action="close-brand" aria-label="Fechar">x</button>
-    <button class="logo-version brand-version" data-action="go-technical-logo" title="Registro Técnico de Evolução">V18.6</button>
+    <button class="logo-version brand-version" data-action="go-technical-logo" title="Registro Técnico de Evolução">V18.7</button>
+    <button type="button" class="brand-help-button brand-help-full" data-action="go-view" data-id="userManual" title="Manual de Uso" aria-label="Abrir Manual de Uso">?</button>
     <div class="brand-full-image" aria-hidden="true"></div>
   </dialog>
 

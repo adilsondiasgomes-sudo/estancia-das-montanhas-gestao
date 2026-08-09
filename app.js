@@ -1,6 +1,6 @@
-const APP_VERSION = "V18.6";
-const storageKey = "estancia-das-montanhas-gestao-v18-6";
-const authStorageKey = "estancia-das-montanhas-auth-v18-6";
+const APP_VERSION = "V18.7";
+const storageKey = "estancia-das-montanhas-gestao-v18-7";
+const authStorageKey = "estancia-das-montanhas-auth-v18-7";
 const config = window.ESTANCIA_CONFIG || {};
 // V17.2: celulas de tabela escapam texto por padrao; HTML do sistema exige marcador rawHtml().
 const appMode = config.appMode || "local-assisted";
@@ -140,7 +140,7 @@ function ensureDemoData(data){
 let state = loadStateSync();
 
 const modules = [
-  ["dashboard","Visão Geral","IN",["manager","operator"]], ["reservations","Reservas","RS",["manager","operator"]], ["calendar","Agenda","AG",["manager","operator"]], ["reservationFilters","Filtros de Reservas","RF",["manager","operator"]], ["reservationDocuments","Documentos da Reserva","DC",["manager","operator"]], ["checkin","Check-in/out","OK",["manager","operator"]], ["stayWorkflow","Conferência da estadia","OK",["manager","operator"]], ["guests","Hóspedes","HP",["manager","operator"]], ["clients","Clientes","CL",["manager","operator"]], ["spaces","Espaços","ES",["manager","operator"]], ["finance","Financeiro","$",["manager"]], ["maintenance","Manutenção","MT",["manager","operator"]], ["cleaning","Limpeza","LX",["manager","operator"]], ["laundry","Lavanderia","LV",["manager","operator"]], ["inventory","Inventário","IV",["manager","operator"]], ["utilities","Consumos","CO",["manager","operator"]], ["employees","Equipe","EQ",["manager"]], ["reports","Relatórios","RP",["manager"]], ["backup","Backup","BK",["manager"]], ["technical","Registro Técnico","VT",["manager","operator"]]
+  ["dashboard","Visão Geral","IN",["manager","operator"]], ["reservations","Reservas","RS",["manager","operator"]], ["calendar","Agenda","AG",["manager","operator"]], ["reservationFilters","Filtros de Reservas","RF",["manager","operator"]], ["reservationDocuments","Documentos da Reserva","DC",["manager","operator"]], ["checkin","Check-in/out","OK",["manager","operator"]], ["stayWorkflow","Conferência da estadia","OK",["manager","operator"]], ["guests","Hóspedes","HP",["manager","operator"]], ["clients","Clientes","CL",["manager","operator"]], ["spaces","Espaços","ES",["manager","operator"]], ["finance","Financeiro","$",["manager"]], ["maintenance","Manutenção","MT",["manager","operator"]], ["cleaning","Limpeza","LX",["manager","operator"]], ["laundry","Lavanderia","LV",["manager","operator"]], ["inventory","Inventário","IV",["manager","operator"]], ["utilities","Consumos","CO",["manager","operator"]], ["employees","Equipe","EQ",["manager"]], ["reports","Relatórios","RP",["manager"]], ["backup","Backup","BK",["manager"]], ["technical","Registro Técnico","VT",["manager","operator"]], ["userManual","Manual de Uso","AJ",["manager","operator"]]
 ];
 const evolutionLog = [
   ["V1","Primeiro protótipo local com estrutura inicial do sistema."],
@@ -189,7 +189,8 @@ const evolutionLog = [
   ["V18.3","Polimento da interface de homologação cloud: a mensagem técnica de estado sincronizado deixa de aparecer na barra superior e a tela de reservas remove botões redundantes do bloco de orientação, mantendo as ações principais no topo e na linha de cada reserva."],
   ["V18.4","Correção fina de homologação: máscaras visuais para CPF/CPF-CNPJ nos campos de lançamento, financeiro passa a refletir sinal e saldo de reservas sem lançamento vinculado, e o status sincronizado oculto deixa de reservar moldura vazia."],
   ["V18.5","Polimento operacional antes da rodada de backup: reservas passam a guardar data/hora de lançamento e última alteração no app, compatíveis com created_at/updated_at do Supabase, com exibição discreta nos detalhes e filtros de reservas."],
-  ["V18.6","Módulo de backup dedicado: exportação completa, importação por mescla, substituição controlada e zeramento do banco com confirmação explícita, snapshot local prévio e sincronização cloud por registro para preservar a trava contra gravação destrutiva em lote."]
+  ["V18.6","Módulo de backup dedicado: exportação completa, importação por mescla, substituição controlada e zeramento do banco com confirmação explícita, snapshot local prévio e sincronização cloud por registro para preservar a trava contra gravação destrutiva em lote."],
+  ["V18.7","Manual de Uso incorporado ao Registro Técnico, com acesso discreto pela logo e linguagem direta para orientar o proprietário e a operação: primeiro cadastros essenciais, depois reservas, hóspedes, rotina operacional, financeiro, documentos, backup e segurança."]
 ];
 const schemaByView = { reservations:"reservation", guests:"guest", clients:"client", spaces:"space", finance:"transaction", maintenance:"maintenance", cleaning:"cleaning", laundry:"laundry", inventory:"inventory", utilities:"utility", employees:"employee" };
 const DATA_LISTS = ["clients","spaces","reservations","guests","transactions","maintenance","cleaning","laundry","inventory","utilities","employees"];
@@ -235,6 +236,7 @@ function hasOperationalRecords(data){
 function loadStateSync(){
   const fallbackKeys=[
     storageKey,
+    "estancia-das-montanhas-gestao-v18-6",
     "estancia-das-montanhas-gestao-v18-5",
     "estancia-das-montanhas-gestao-v18-4",
     "estancia-das-montanhas-gestao-v18-3",
@@ -449,7 +451,7 @@ function navIcon(id){
   return `<svg ${attrs}>${icons[id]||'<circle cx="12" cy="12" r="8"/>'}</svg>`;
 }
 
-function render(){ if(!canAccess(currentView)) currentView=allowedModules()[0][0]; document.querySelector('#page-title').textContent=modules.find(([id])=>id===currentView)?.[1]||'Documentos'; document.querySelector('#active-role').textContent=isManager()?'Gerencial':'Operacional'; document.querySelectorAll('.logo-version').forEach(el=>el.textContent=APP_VERSION); renderSyncStatus(); renderNav(); setQuickAction(); const views={dashboard,calendar,reservations,reservationFilters,reservationDocuments,checkin,stayWorkflow,guests,clients,spaces,finance,managerialReport,maintenance,cleaning,laundry,inventory,utilities,employees,reports,backup,technical}; document.querySelector('#view').innerHTML=views[currentView](); }
+function render(){ if(!canAccess(currentView)) currentView=allowedModules()[0][0]; document.querySelector('#page-title').textContent=modules.find(([id])=>id===currentView)?.[1]||'Documentos'; document.querySelector('#active-role').textContent=isManager()?'Gerencial':'Operacional'; document.querySelectorAll('.logo-version').forEach(el=>el.textContent=APP_VERSION); renderSyncStatus(); renderNav(); setQuickAction(); const views={dashboard,calendar,reservations,reservationFilters,reservationDocuments,checkin,stayWorkflow,guests,clients,spaces,finance,managerialReport,maintenance,cleaning,laundry,inventory,utilities,employees,reports,backup,technical,userManual}; document.querySelector('#view').innerHTML=views[currentView](); }
 function renderSyncStatus(){
   const el=document.querySelector('#sync-status');
   if(!el) return;
@@ -467,7 +469,7 @@ function renderSyncStatus(){
   el.dataset.state=syncStatus.state;
 }
 function setSyncStatus(state,message){ syncStatus={state,message}; renderSyncStatus(); }
-function renderNav(){ document.querySelector('#nav').innerHTML=allowedModules().filter(([id])=>!['technical','stayWorkflow','reservationFilters','reservationDocuments','managerialReport'].includes(id)).map(([id,label])=>`<button class="${id===currentView?'active':''}" data-action="go-view" data-id="${id}"><span class="icon">${navIcon(id)}</span><span>${label}</span></button>`).join(''); }
+function renderNav(){ document.querySelector('#nav').innerHTML=allowedModules().filter(([id])=>!['technical','userManual','stayWorkflow','reservationFilters','reservationDocuments','managerialReport'].includes(id)).map(([id,label])=>`<button class="${id===currentView?'active':''}" data-action="go-view" data-id="${id}"><span class="icon">${navIcon(id)}</span><span>${label}</span></button>`).join(''); }
 function setQuickAction(){ const map={dashboard:['Nova reserva','add-reservation'],calendar:['Nova reserva','add-reservation'],reservations:['Nova reserva','add-reservation'],reservationFilters:['Nova reserva','add-reservation'],guests:['Novo convidado','add-guest'],checkin:['Novo hóspede','add-guest'],clients:['Novo cliente','add-client'],spaces:['Novo espaço','add-space'],finance:['Novo lançamento','add-transaction'],maintenance:['Nova manutenção','add-maintenance'],cleaning:['Nova faxina','add-cleaning'],laundry:['Nova lavanderia','add-laundry'],inventory:['Novo item','add-inventory'],utilities:['Novo consumo','add-utility'],employees:['Novo colaborador','add-employee']}; const b=document.querySelector('#quick-action'), a=map[currentView]; if(!a || currentView==='stayWorkflow' || (!isManager() && ['finance','employees','spaces'].includes(currentView))){b.style.display='none';return} b.style.display=''; b.textContent=a[0]; b.dataset.action=a[1]; }
 
 function fieldsPanel(view){ return ''; }
@@ -1022,7 +1024,90 @@ function backup(){
 }
 function technical(){
   const governance=`<div class="tech-intro audit-governance"><strong>Governança técnica das auditorias</strong><span>A partir da V17.5, o Registro Técnico também documenta auditorias externas por IA, especialmente Claude e Genspark. As análises apontaram riscos de massa demo, configuração, sessão, sincronização local, Supabase incompleto e RLS ausente. A decisão adotada foi avançar por partes: V17.6 saneou a base local sem degradar funcionalidades; V18 iniciou a fundação cloud sem substituir abruptamente o fluxo estável; V18.1 corrigiu bloqueadores de pacote; V18.2 ativa o caminho cloud mínimo com trava contra gravação destrutiva em lote.</span></div>`;
-  return `<section class="card tech-page"><div class="section-head"><div><p class="eyebrow">Documentação técnica</p><h2>Registro Técnico de Evolução</h2><p>Histórico das versões, auditorias e principais decisões de governança do sistema.</p></div></div><div class="tech-intro"><strong>Termo adotado</strong><span>Registro Técnico de Evolução: mais preciso que inventário para narrar a evolução versionada do sistema, e menos amplo que manual técnico.</span></div>${governance}<div class="version-timeline">${evolutionLog.map(([version,text],i)=>`<article class="version-entry ${version===APP_VERSION?'current':''}"><span>${version}</span><div><strong>${version===APP_VERSION?'Versão atual':'Marco '+(i+1)}</strong><p>${text}</p></div></article>`).join('')}</div></section>`;
+  return `<section class="card tech-page"><div class="section-head"><div><p class="eyebrow">Documentação técnica</p><h2>Registro Técnico de Evolução</h2><p>Histórico das versões, auditorias e principais decisões de governança do sistema.</p></div><button data-action="go-view" data-id="userManual">Abrir Manual de Uso</button></div><div class="tech-intro"><strong>Termo adotado</strong><span>Registro Técnico de Evolução: mais preciso que inventário para narrar a evolução versionada do sistema, e menos amplo que manual técnico.</span></div>${governance}<div class="version-timeline">${evolutionLog.map(([version,text],i)=>`<article class="version-entry ${version===APP_VERSION?'current':''}"><span>${version}</span><div><strong>${version===APP_VERSION?'Versão atual':'Marco '+(i+1)}</strong><p>${text}</p></div></article>`).join('')}</div></section>`;
+}
+function manualBlock(title,steps){
+  return `<article class="manual-block"><h3>${esc(title)}</h3><ol>${steps.map(step=>`<li>${esc(step)}</li>`).join('')}</ol></article>`;
+}
+function userManual(){
+  const basics=[
+    manualBlock('1. Entrar e sair do sistema',[
+      'Abra o link do sistema, informe e-mail e senha e clique em Entrar.',
+      'Confira no canto esquerdo se o perfil ativo é Gerencial ou Operacional.',
+      'Ao terminar, clique em Sair. Isso evita que outra pessoa use o sistema no seu lugar.'
+    ]),
+    manualBlock('2. Cadastrar primeiro o cliente contratante',[
+      'Entre em Clientes e clique em Novo cliente.',
+      'Preencha nome completo, telefone, CPF ou CNPJ, e-mail e endereço.',
+      'Esse cliente será o responsável pela reserva e pela lista de pessoas hospedadas.',
+      'Depois de salvar, o cliente aparece na lista. Clique no nome para consultar histórico e reservas.'
+    ]),
+    manualBlock('3. Conferir os espaços disponíveis',[
+      'Entre em Espaços para ver o que pode ser alugado.',
+      'Nome do espaço é o local oferecido, como locação integral da pousada, piscina ou área gourmet.',
+      'Tipo ou modalidade indica o uso do espaço, como hospedagem, evento, day use ou apoio.',
+      'Confira capacidade, valor base e status antes de confirmar uma reserva.'
+    ]),
+    manualBlock('4. Criar uma reserva',[
+      'Entre em Reservas e clique em Nova reserva.',
+      'Escolha o cliente contratante e o espaço que será usado.',
+      'Informe tipo de reserva, pacote, data de entrada, data de saída, horários, quantidade de pessoas, valor total e sinal pago.',
+      'Use Pré-reserva quando ainda falta confirmação. Use Confirmada quando o acordo estiver fechado.',
+      'Se houver sinal pago, confira depois no Financeiro se a previsão ou entrada aparece corretamente.'
+    ]),
+    manualBlock('5. Cadastrar hóspedes e convidados',[
+      'Depois da reserva, cadastre as pessoas que irão participar da hospedagem.',
+      'Entre em Hóspedes ou use o botão de hóspedes dentro da própria reserva.',
+      'Cada pessoa deve ser lançada separadamente, com nome completo, CPF e endereço.',
+      'O convidado fica vinculado ao CPF do contratante e ao período da reserva.'
+    ])
+  ];
+  const operations=[
+    manualBlock('6. Usar a Agenda',[
+      'A Agenda mostra as reservas por data.',
+      'Quando houver mais de uma reserva no mesmo dia, o sistema mostra a quantidade e permite abrir os detalhes.',
+      'Clique no dia ou no item exibido para ver contratante, tipo de evento, período e situação.',
+      'Antes de confirmar uma reserva, confira se não existe conflito de data, horário ou espaço.'
+    ]),
+    manualBlock('7. Fazer check-in',[
+      'No dia da entrada, entre em Check-in/out.',
+      'Localize a reserva e clique na ação de check-in.',
+      'Confira dados do contratante, datas, saldo, lista de pessoas e observações.',
+      'Registre o que foi conferido: chaves, limpeza, regras de uso, piscina, móveis e utensílios.',
+      'Ao confirmar, o sistema registra a data e hora do check-in.'
+    ]),
+    manualBlock('8. Fazer check-out',[
+      'No fim da estadia, entre novamente em Check-in/out.',
+      'Abra a reserva e faça a conferência de saída.',
+      'Confira danos, itens faltantes, limpeza, consumo extra e saldo pendente.',
+      'Ao finalizar, o sistema registra a data e hora do check-out.'
+    ]),
+    manualBlock('9. Acompanhar o Financeiro',[
+      'O Financeiro mostra entradas, saídas, saldos e pendências.',
+      'Use os filtros por data, contratante, reserva, categoria ou status.',
+      'Entradas são valores recebidos ou previstos. Saídas são gastos da pousada.',
+      'Use Relatório gerencial para imprimir um resumo dos lançamentos filtrados.'
+    ]),
+    manualBlock('10. Emitir documentos da reserva',[
+      'Em Reservas ou Filtros de Reservas, clique no ícone de documentos.',
+      'Escolha recibo, contrato-resumo, ficha de hóspedes ou comprovante de check-in/check-out.',
+      'Clique em Imprimir para gerar papel ou salvar em PDF pelo navegador.'
+    ]),
+    manualBlock('11. Usar Backup com segurança',[
+      'Entre em Backup para exportar, importar, mesclar ou zerar a base.',
+      'Antes de mexer em dados importantes, clique em Baixar backup completo.',
+      'Use Importar e mesclar quando quiser juntar dados sem apagar o que já existe.',
+      'Use Substituir base somente quando tiver certeza de que o arquivo escolhido é a base correta.',
+      'Use Zerar banco apenas em caso de teste ou limpeza planejada. O sistema pedirá confirmação.'
+    ])
+  ];
+  return `<section class="card manual-page"><div class="section-head"><div><p class="eyebrow">Instruções de uso</p><h2>Manual de Uso do Sistema</h2><p>Guia simples para usar o sistema da pousada no dia a dia. Comece pelos cadastros básicos e avance conforme a necessidade.</p></div><button data-action="go-view" data-id="technical">Voltar ao Registro Técnico</button></div>
+    <div class="manual-intro"><strong>Ordem recomendada</strong><span>Cliente primeiro. Depois reserva. Depois hóspedes. Em seguida, acompanhe agenda, check-in, financeiro, documentos e backup.</span></div>
+    <div class="manual-grid">${basics.join('')}</div>
+    <div class="manual-divider"><span>Rotina operacional e gerencial</span></div>
+    <div class="manual-grid">${operations.join('')}</div>
+    <div class="manual-note"><strong>Dica importante</strong><span>Se aparecer dúvida, não apague dados antes de exportar um backup. Primeiro salve uma cópia, depois faça o ajuste.</span></div>
+  </section>`;
 }
 
 
@@ -1214,7 +1299,7 @@ function wireGuestForm(item){
 }
 function canUseForm(type){ return isManager() || !['transaction','employee','space'].includes(type); }
 function removeItem(type,id){ if(!isManager()) return alert('Exclusões são restritas ao perfil gerencial.'); const impact=linkedImpact(type,id); if(impact) return alert(`Exclusão bloqueada para preservar integridade referencial. ${impact}`); const schema=schemas[type]; state[schema.list]=state[schema.list].filter(x=>x.id!==id); if(saveState({sync:{list:schema.list,id,delete:true}})) render(); }
-function exportBackup(){ const blob=new Blob([JSON.stringify({app:'estancia-das-montanhas',version:"18.6",exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`backup-estancia-v18-6-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
+function exportBackup(){ const blob=new Blob([JSON.stringify({app:'estancia-das-montanhas',version:"18.7",exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`backup-estancia-v18-7-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
 function validateReferentialIntegrity(data){
   const clientIds=new Set((data.clients||[]).map(x=>x.id).filter(Boolean));
   const spaceIds=new Set((data.spaces||[]).map(x=>x.id).filter(Boolean));
@@ -1366,7 +1451,7 @@ async function handle(action,id,status){
   if(action==='open-brand') return document.querySelector('#brand-viewer')?.showModal();
   if(action==='close-brand') return document.querySelector('#brand-viewer')?.close();
   if(action==='go-technical-logo'){ document.querySelector('#brand-viewer')?.close(); currentView='technical'; guestDetailView=null; reservationDetailId=null; documentsReservationId=null; activeDocument=null; return render(); }
-  if(action==='go-view'){currentView=id; if(id!=='guests') guestDetailView=null; if(id!=='reservationFilters') reservationDetailId=null; if(id!=='reservationDocuments'){documentsReservationId=null;activeDocument=null;} return render()}
+  if(action==='go-view'){document.querySelector('#brand-viewer')?.close(); currentView=id; if(id!=='guests') guestDetailView=null; if(id!=='reservationFilters') reservationDetailId=null; if(id!=='reservationDocuments'){documentsReservationId=null;activeDocument=null;} return render()}
   if(action==='reservation-filter'){reservationFilterMode=id||'all'; reservationDetailId=null; currentView='reservationFilters'; return render()}
   if(action==='reservation-detail'){reservationDetailId=id||null; currentView='reservationFilters'; return render()}
   if(action==='reservation-documents'){documentsReservationId=id; activeDocument=null; currentView='reservationDocuments'; return render()}
