@@ -1,26 +1,28 @@
 Sistema de Gestao | Sitio Estancia das Montanhas
-Versao: V18.5
+Versao: V18.6
 Data: 09/08/2026
 
 Natureza:
-- Polimento operacional incremental antes da rodada dedicada ao backup.
+- Versao dedicada ao modulo de backup, importacao, mescla e zeramento controlado.
 
 Melhorias implementadas:
-- Reservas novas passam a registrar data/hora de lancamento no campo interno createdAt.
-- Reservas editadas passam a registrar data/hora da ultima alteracao no campo interno updatedAt.
-- Mapeamento Supabase de reservas passou a reconhecer created_at e updated_at, aproveitando colunas ja existentes no banco.
-- Detalhes de agendamento exibem, para perfil gerencial, "Lancada em" e "Atualizada em".
-- Filtros de reservas exibem, para perfil gerencial, a data/hora de lancamento de cada reserva.
-- Identificacao visual, Registro Tecnico e backup exportado foram alinhados para V18.5.
-- A V18.5 herda dados locais da V18.4 na primeira abertura.
+- Modulo Backup ganhou painel proprio com contagem dos principais registros da base.
+- Exportacao completa passa a identificar a versao V18.6 no JSON e no nome do arquivo.
+- Importacao por mescla adiciona registros novos e atualiza registros com o mesmo identificador.
+- Substituicao de base permanece disponivel, mas com snapshot local antes da operacao.
+- Zerar banco do sistema foi incluído com dupla confirmacao e digitacao obrigatoria de ZERAR.
+- Em modo cloud, mescla, substituicao e zeramento sincronizam por registro, preservando a trava contra saveState em lote.
+- Registro Tecnico recebeu entrada V18.6 documentando a governanca do backup.
+- A V18.6 herda dados locais da V18.5 na primeira abertura.
 
 Limites assumidos:
-- Nao houve mudanca de schema Supabase, RLS, Auth ou fluxo de persistencia cloud.
-- Auditoria por usuario especifico fica para rodada posterior, se adotarmos campo proprio de autoria no schema.
-- A proxima rodada dedicada ao backup permanece separada para evitar misturar persistencia, restauracao e polimentos visuais.
+- A operacao de zeramento remove dados operacionais do app, nao usuarios do Supabase Auth.
+- Snapshots de seguranca ficam no navegador local e nao substituem o backup baixado em arquivo.
+- Restauracao parcial de falha em cloud deve ser conferida por auditoria posterior se houver queda de rede durante a sincronizacao.
 
 Validacao recomendada:
-- Criar uma nova reserva e abrir o detalhe do agendamento para conferir "Lancada em" e "Atualizada em".
-- Editar a reserva e conferir se "Atualizada em" muda.
-- Abrir Filtros de Reservas e confirmar a exibicao discreta da data/hora de lancamento.
+- Exportar backup e conferir se o arquivo baixa como backup-estancia-v18-6.
+- Mesclar o backup recem-exportado e confirmar que a base permanece integra.
+- Testar substituicao com o mesmo backup em ambiente de homologacao.
+- Testar o fluxo de zeramento somente depois de exportar backup e confirmar a digitacao ZERAR.
 - Rodar `node --check` nos arquivos JavaScript antes de publicar.

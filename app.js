@@ -1,6 +1,6 @@
-const APP_VERSION = "V18.5";
-const storageKey = "estancia-das-montanhas-gestao-v18-5";
-const authStorageKey = "estancia-das-montanhas-auth-v18-5";
+const APP_VERSION = "V18.6";
+const storageKey = "estancia-das-montanhas-gestao-v18-6";
+const authStorageKey = "estancia-das-montanhas-auth-v18-6";
 const config = window.ESTANCIA_CONFIG || {};
 // V17.2: celulas de tabela escapam texto por padrao; HTML do sistema exige marcador rawHtml().
 const appMode = config.appMode || "local-assisted";
@@ -22,6 +22,7 @@ let currentUser = null;
 let currentView = "dashboard";
 let dataMode = "browser";
 let selectedClientId = null;
+let backupImportMode = "replace";
 let selectedCalendarReservationId = null;
 let selectedCalendarDay = null;
 let selectedCalendarMonth = new Date().toISOString().slice(0,7);
@@ -187,9 +188,11 @@ const evolutionLog = [
   ["V18.2","Ativação cloud mínima e segura: login/sessão passam por auth.js, estado passa pelo repository, Supabase loader entra no runtime cloud e SupabaseRepository bloqueia gravação em lote destrutiva, usando leitura paginada e upsert/delete explícitos por registro."],
   ["V18.3","Polimento da interface de homologação cloud: a mensagem técnica de estado sincronizado deixa de aparecer na barra superior e a tela de reservas remove botões redundantes do bloco de orientação, mantendo as ações principais no topo e na linha de cada reserva."],
   ["V18.4","Correção fina de homologação: máscaras visuais para CPF/CPF-CNPJ nos campos de lançamento, financeiro passa a refletir sinal e saldo de reservas sem lançamento vinculado, e o status sincronizado oculto deixa de reservar moldura vazia."],
-  ["V18.5","Polimento operacional antes da rodada de backup: reservas passam a guardar data/hora de lançamento e última alteração no app, compatíveis com created_at/updated_at do Supabase, com exibição discreta nos detalhes e filtros de reservas."]
+  ["V18.5","Polimento operacional antes da rodada de backup: reservas passam a guardar data/hora de lançamento e última alteração no app, compatíveis com created_at/updated_at do Supabase, com exibição discreta nos detalhes e filtros de reservas."],
+  ["V18.6","Módulo de backup dedicado: exportação completa, importação por mescla, substituição controlada e zeramento do banco com confirmação explícita, snapshot local prévio e sincronização cloud por registro para preservar a trava contra gravação destrutiva em lote."]
 ];
 const schemaByView = { reservations:"reservation", guests:"guest", clients:"client", spaces:"space", finance:"transaction", maintenance:"maintenance", cleaning:"cleaning", laundry:"laundry", inventory:"inventory", utilities:"utility", employees:"employee" };
+const DATA_LISTS = ["clients","spaces","reservations","guests","transactions","maintenance","cleaning","laundry","inventory","utilities","employees"];
 const moneyFields = new Set(["baseRate","total","paid","amount","cost","replacementValue","rate"]);
 const requiredFields = {
   reservation:["clientId","spaceId","type","start","end","total","status"],
@@ -232,6 +235,7 @@ function hasOperationalRecords(data){
 function loadStateSync(){
   const fallbackKeys=[
     storageKey,
+    "estancia-das-montanhas-gestao-v18-5",
     "estancia-das-montanhas-gestao-v18-4",
     "estancia-das-montanhas-gestao-v18-3",
     "estancia-das-montanhas-gestao-v18-2",
@@ -997,7 +1001,25 @@ function inventory(){
 function utilities(){ return section('Consumos','Energia, água, gás e contas.','add-utility', table(isManager()?['Mês','Tipo','Leitura','Valor','Notas','']:['Mês','Tipo','Leitura','Notas',''], state.utilities.map(u=>isManager()?[u.month,u.type,u.reading,money(u.amount),u.notes,rawHtml(rowActions('utility',u.id))]:[u.month,u.type,u.reading,u.notes,rawHtml(rowActions('utility',u.id))]))); }
 function employees(){ return section('Equipe','Diaristas e fornecedores.','add-employee', table(['Nome','Função','Telefone','Pagamento','Valor','Status',''], state.employees.map(e=>[e.name,e.role,e.phone,e.payType,money(e.rate),rawHtml(badge(e.status)),rawHtml(rowActions('employee',e.id))]))); }
 function reports(){ return `<div class="grid cols-3">${metric('Reservas',state.reservations.length,'Abrir reservas','reservations')}${metric('Hóspedes',state.guests.length,'Abrir hóspedes','guests')}${metric('Inventário',money(state.inventory.reduce((s,i)=>s+Number(i.replacementValue||0),0)),'Abrir inventário','inventory')}</div><section class="card"><h2>Relatório executivo</h2><p class="muted">Resumo gerencial de ocupação, hóspedes, patrimônio, consumos e financeiro.</p></section>`; }
-function backup(){ return `<section class="card"><div class="section-head"><div><h2>Backup e recuperação</h2><p>Exportação e importação ficam apenas neste módulo.</p></div></div><div class="grid cols-2"><div class="card"><h3>Exportar</h3><button class="primary" data-action="export-backup">Baixar backup completo</button></div><div class="card"><h3>Recuperar</h3><button data-action="choose-restore">Selecionar arquivo de backup</button></div></div></section>`; }
+function backup(){
+  const total=DATA_LISTS.reduce((sum,list)=>sum+(state[list]?.length||0),0);
+  const stats=[
+    ['Clientes',state.clients.length],
+    ['Reservas',state.reservations.length],
+    ['Hóspedes',state.guests.length],
+    ['Financeiro',state.transactions.length],
+    ['Total',total]
+  ];
+  return `<section class="card backup-page"><div class="section-head"><div><h2>Backup e recuperação</h2><p>Exportação, importação, mescla e zeramento ficam apenas neste módulo gerencial.</p></div></div>
+    <div class="guest-overview backup-stats">${stats.map(([label,value],i)=>`<div class="fact guest-stat-card"><span>${String(i+1).padStart(2,'0')} · ${label}</span><strong>${value}</strong><em>registros</em></div>`).join('')}</div>
+    <div class="grid cols-2 backup-actions-grid">
+      <div class="card backup-action-card"><h3>Exportar backup completo</h3><p class="muted">Baixa um JSON com todos os módulos e metadados da versão atual.</p><button class="primary" data-action="export-backup">Baixar backup completo</button></div>
+      <div class="card backup-action-card"><h3>Importar e mesclar</h3><p class="muted">Adiciona registros novos e atualiza registros com o mesmo identificador, preservando o restante da base.</p><button data-action="choose-merge">Selecionar backup para mesclar</button></div>
+      <div class="card backup-action-card"><h3>Substituir base</h3><p class="muted">Troca a base atual pelo arquivo selecionado. Um snapshot local é criado antes da operação.</p><button data-action="choose-restore">Selecionar backup para substituir</button></div>
+      <div class="card backup-action-card danger-zone"><h3>Zerar banco do sistema</h3><p class="muted">Remove todos os registros operacionais. Use somente após exportar e conferir um backup.</p><button class="danger-button" data-action="clear-database">Zerar banco</button></div>
+    </div>
+  </section>`;
+}
 function technical(){
   const governance=`<div class="tech-intro audit-governance"><strong>Governança técnica das auditorias</strong><span>A partir da V17.5, o Registro Técnico também documenta auditorias externas por IA, especialmente Claude e Genspark. As análises apontaram riscos de massa demo, configuração, sessão, sincronização local, Supabase incompleto e RLS ausente. A decisão adotada foi avançar por partes: V17.6 saneou a base local sem degradar funcionalidades; V18 iniciou a fundação cloud sem substituir abruptamente o fluxo estável; V18.1 corrigiu bloqueadores de pacote; V18.2 ativa o caminho cloud mínimo com trava contra gravação destrutiva em lote.</span></div>`;
   return `<section class="card tech-page"><div class="section-head"><div><p class="eyebrow">Documentação técnica</p><h2>Registro Técnico de Evolução</h2><p>Histórico das versões, auditorias e principais decisões de governança do sistema.</p></div></div><div class="tech-intro"><strong>Termo adotado</strong><span>Registro Técnico de Evolução: mais preciso que inventário para narrar a evolução versionada do sistema, e menos amplo que manual técnico.</span></div>${governance}<div class="version-timeline">${evolutionLog.map(([version,text],i)=>`<article class="version-entry ${version===APP_VERSION?'current':''}"><span>${version}</span><div><strong>${version===APP_VERSION?'Versão atual':'Marco '+(i+1)}</strong><p>${text}</p></div></article>`).join('')}</div></section>`;
@@ -1192,7 +1214,7 @@ function wireGuestForm(item){
 }
 function canUseForm(type){ return isManager() || !['transaction','employee','space'].includes(type); }
 function removeItem(type,id){ if(!isManager()) return alert('Exclusões são restritas ao perfil gerencial.'); const impact=linkedImpact(type,id); if(impact) return alert(`Exclusão bloqueada para preservar integridade referencial. ${impact}`); const schema=schemas[type]; state[schema.list]=state[schema.list].filter(x=>x.id!==id); if(saveState({sync:{list:schema.list,id,delete:true}})) render(); }
-function exportBackup(){ const blob=new Blob([JSON.stringify({app:'estancia-das-montanhas',version:"18.5",exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`backup-estancia-v18-5-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
+function exportBackup(){ const blob=new Blob([JSON.stringify({app:'estancia-das-montanhas',version:"18.6",exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`backup-estancia-v18-6-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
 function validateReferentialIntegrity(data){
   const clientIds=new Set((data.clients||[]).map(x=>x.id).filter(Boolean));
   const spaceIds=new Set((data.spaces||[]).map(x=>x.id).filter(Boolean));
@@ -1225,8 +1247,7 @@ function validateReferentialIntegrity(data){
   return '';
 }
 function validateImportedState(data){
-  const requiredLists=["clients","spaces","reservations","guests","transactions","maintenance","cleaning","laundry","inventory","utilities","employees"];
-  for(const k of requiredLists){ if(data[k]!==undefined && !Array.isArray(data[k])) return `${k} deve ser uma lista.`; }
+  for(const k of DATA_LISTS){ if(data[k]!==undefined && !Array.isArray(data[k])) return `${k} deve ser uma lista.`; }
   return validateReferentialIntegrity(data);
 }
 function pruneRestoreSnapshots(){
@@ -1238,25 +1259,108 @@ function pruneRestoreSnapshots(){
   }
   keys.sort().reverse().slice(2).forEach(key=>localStorage.removeItem(key));
 }
-function restoreBackup(file){ file.text().then(text=>{
-  let parsed;
-  try{ parsed=JSON.parse(text); }catch(err){ alert('Arquivo de backup inválido.'); return; }
-  const data=parsed.data || parsed;
-  const valid=parsed.app==='estancia-das-montanhas' && Array.isArray(data?.reservations);
-  if(!valid){ alert('Arquivo de backup inválido ou incompatível com este sistema.'); return; }
-  const error=validateImportedState(data);
-  if(error){ alert(`Backup rejeitado: ${error}`); return; }
-  if(!confirm('A recuperação substituirá os dados atuais do sistema. Deseja continuar?')) return;
-  const snapshotKey=`${storageKey}-snapshot-${new Date().toISOString()}`;
+function createSafetySnapshot(reason='backup'){
+  const snapshotKey=`${storageKey}-snapshot-${reason}-${new Date().toISOString()}`;
   localStorage.setItem(snapshotKey,JSON.stringify(state));
   pruneRestoreSnapshots();
+  return snapshotKey;
+}
+function parseBackupText(text){
+  let parsed;
+  try{ parsed=JSON.parse(text); }catch(err){ throw new Error('Arquivo de backup inválido.'); }
+  const data=parsed.data || parsed;
+  const valid=parsed.app==='estancia-das-montanhas' && Array.isArray(data?.reservations);
+  if(!valid) throw new Error('Arquivo de backup inválido ou incompatível com este sistema.');
+  return normalizeState(data,{allowDemo:false});
+}
+function mergeStates(base,incoming){
+  const merged=normalizeState(base,{allowDemo:false});
+  DATA_LISTS.forEach(list=>{
+    const map=new Map((merged[list]||[]).map(item=>[item.id,item]));
+    (incoming[list]||[]).forEach(item=>{ if(item?.id) map.set(item.id,{...(map.get(item.id)||{}),...item}); });
+    merged[list]=Array.from(map.values());
+  });
+  return merged;
+}
+async function syncRecordsToRepository(nextState,mode,previousState=state){
+  if(!activeRepository) return;
+  const previousIds=new Map(DATA_LISTS.map(list=>[list,new Set((previousState[list]||[]).map(item=>item.id).filter(Boolean))]));
+  for(const list of DATA_LISTS){
+    for(const item of nextState[list]||[]) await activeRepository.upsertRecord(list,item,nextState);
+  }
+  if(mode==='replace'){
+    for(const list of DATA_LISTS){
+      const nextIds=new Set((nextState[list]||[]).map(item=>item.id).filter(Boolean));
+      for(const id of previousIds.get(list)||[]) if(!nextIds.has(id)) await activeRepository.deleteRecord(list,id);
+    }
+  }
+}
+async function commitImportedState(nextState,{mode='merge',snapshotReason='import'}={}){
+  const error=validateImportedState(nextState);
+  if(error) throw new Error(`Backup rejeitado: ${error}`);
+  const previous=state;
+  const snapshotKey=createSafetySnapshot(snapshotReason);
+  try{
+    nextState=normalizeState(nextState,{allowDemo:false});
+    nextState.meta={revision:Number(previous.meta?.revision||0)+1,updatedAt:new Date().toISOString(),lastWriterId:appInstanceId};
+    setSyncStatus("syncing",mode==='merge'?'Mesclando backup no repositório ativo...':'Substituindo base no repositório ativo...');
+    await syncRecordsToRepository(nextState,mode,previous);
+    state=nextState;
+    loadedRevision=state.meta.revision;
+    localStorage.setItem(storageKey,JSON.stringify(state));
+    setSyncStatus(activeRepository?"synced":"browser",activeRepository?"":"Operação concluída somente no navegador.");
+    return snapshotKey;
+  }catch(err){
+    state=previous;
+    localStorage.setItem(storageKey,JSON.stringify(previous));
+    setSyncStatus("error",`Falha na operação de backup: ${err.message}`);
+    throw err;
+  }
+}
+function restoreBackup(file,mode='replace'){ file.text().then(async text=>{
+  let incoming;
+  try{ incoming=parseBackupText(text); }catch(err){ alert(err.message); return; }
+  const nextState=mode==='merge' ? mergeStates(state,incoming) : incoming;
+  const message=mode==='merge'
+    ? 'A mescla adicionará registros novos e atualizará registros com mesmo identificador. Deseja continuar?'
+    : 'A recuperação substituirá os dados atuais do sistema. Deseja continuar?';
+  if(!confirm(message)) return;
   const previous=state;
   try{
-    state=normalizeState(data,{allowDemo:false});
-    if(!saveState({force:true})) throw new Error('Gravação cancelada.');
-    render(); alert(`Backup recuperado com sucesso. Snapshot anterior salvo em ${snapshotKey}.`);
-  }catch(err){ state=previous; localStorage.setItem(storageKey,JSON.stringify(previous)); alert(`Falha na restauração. Snapshot anterior preservado. ${err.message}`); }
+    const snapshotKey=await commitImportedState(nextState,{mode,snapshotReason:mode});
+    render(); alert(`${mode==='merge'?'Backup mesclado':'Backup recuperado'} com sucesso. Snapshot anterior salvo em ${snapshotKey}.`);
+  }catch(err){ state=previous; localStorage.setItem(storageKey,JSON.stringify(previous)); alert(`Falha na operação. Snapshot anterior preservado. ${err.message}`); }
 }).catch(()=>alert('Não foi possível ler o arquivo de backup.')); }
+async function clearDatabase(){
+  if(!isManager()) return alert('Zerar banco é restrito ao perfil gerencial.');
+  const total=DATA_LISTS.reduce((sum,list)=>sum+(state[list]?.length||0),0);
+  if(!total) return alert('A base já está vazia.');
+  if(!confirm(`Esta ação vai zerar ${total} registro(s) operacionais do sistema. Exporte um backup antes de continuar. Deseja prosseguir?`)) return;
+  const typed=prompt('Para confirmar o zeramento definitivo, digite ZERAR');
+  if(typed!=='ZERAR') return alert('Zeramento cancelado.');
+  const previous=state;
+  const snapshotKey=createSafetySnapshot('zeramento');
+  try{
+    setSyncStatus("syncing","Zerando registros no repositório ativo...");
+    if(activeRepository){
+      for(const list of DATA_LISTS){
+        for(const item of previous[list]||[]) if(item.id) await activeRepository.deleteRecord(list,item.id);
+      }
+    }
+    state=normalizeState(emptyState,{allowDemo:false});
+    state.meta={revision:Number(previous.meta?.revision||0)+1,updatedAt:new Date().toISOString(),lastWriterId:appInstanceId};
+    loadedRevision=state.meta.revision;
+    localStorage.setItem(storageKey,JSON.stringify(state));
+    setSyncStatus(activeRepository?"synced":"browser",activeRepository?"":"Banco zerado somente no navegador.");
+    render();
+    alert(`Banco zerado com sucesso. Snapshot anterior salvo em ${snapshotKey}.`);
+  }catch(err){
+    state=previous;
+    localStorage.setItem(storageKey,JSON.stringify(previous));
+    setSyncStatus("error",`Falha ao zerar banco: ${err.message}`);
+    alert(`Falha ao zerar banco. Snapshot preservado em ${snapshotKey}. ${err.message}`);
+  }
+}
 
 async function handle(action,id,status){
   if(action==='open-brand') return document.querySelector('#brand-viewer')?.showModal();
@@ -1310,7 +1414,9 @@ async function handle(action,id,status){
   if(action==='status-reservation'){const r=byId(state.reservations,id); r.status=status; saveState({sync:{list:"reservations",item:r}}); return render()}
   if(action==='add-guest-reservation') return openForm('guest',null,{reservationId:id});
   if(action==='export-backup') return exportBackup();
-  if(action==='choose-restore') return document.querySelector('#restore-file').click();
+  if(action==='choose-merge'){ backupImportMode='merge'; return document.querySelector('#restore-file').click(); }
+  if(action==='choose-restore'){ backupImportMode='replace'; return document.querySelector('#restore-file').click(); }
+  if(action==='clear-database') return clearDatabase();
   if(action?.startsWith('add-')) return openForm(action.replace('add-',''));
   if(action?.startsWith('edit-')) return openForm(action.replace('edit-',''),id);
   if(action?.startsWith('delete-')) return removeItem(action.replace('delete-',''),id);
@@ -1342,7 +1448,7 @@ document.addEventListener('pointerout',e=>{
   const el=e.target.closest('.dashboard-cards .metric-link,.ops-actions button');
   if(el) el.style.transform='';
 });
-document.querySelector('#restore-file').addEventListener('change',e=>{const f=e.target.files[0]; e.target.value=''; if(f) restoreBackup(f);});
+document.querySelector('#restore-file').addEventListener('change',e=>{const f=e.target.files[0]; e.target.value=''; if(f) restoreBackup(f,backupImportMode);});
 window.addEventListener('storage',e=>{
   if(e.key!==storageKey || !e.newValue) return;
   try{

@@ -1,35 +1,31 @@
-# Sistema Estancia das Montanhas - V18.5
+# Sistema Estancia das Montanhas - V18.6
 
-Versao incremental de polimento operacional, produzida a partir da V18.4.
+Versao dedicada ao modulo de backup e recuperacao, produzida a partir da V18.5.
 
 ## Veredito da rodada
 
-A V18.5 preserva a fundacao GitHub Pages/Supabase ja homologada e acrescenta uma trilha temporal simples para reservas: data/hora de lancamento e data/hora de ultima alteracao.
+A V18.6 preserva a fundacao GitHub Pages/Supabase homologada e fortalece o modulo Backup com exportacao completa, importacao por mescla, substituicao controlada e zeramento do banco do sistema.
 
-## Escopo real da V18.5
+## Escopo real da V18.6
 
-- Reservas novas recebem `createdAt` no momento do cadastro.
-- Reservas editadas recebem `updatedAt` no momento da alteracao.
-- O mapeador Supabase reconhece `created_at` e `updated_at`, colunas ja existentes no schema cloud.
-- Os detalhes de agendamento exibem os carimbos de tempo para o perfil gerencial.
-- A pagina de filtros de reservas exibe a data/hora de lancamento de cada reserva.
-- Registro Tecnico, identificacao de versao e backup exportado foram alinhados para V18.5.
+- O modulo Backup passa a exibir contadores de registros antes das operacoes.
+- Exportar backup baixa um JSON completo identificado como V18.6.
+- Importar e mesclar preserva a base atual, adicionando novos registros e atualizando registros de mesmo ID.
+- Substituir base troca a base atual pelo arquivo selecionado, mantendo snapshot local previo.
+- Zerar banco exige confirmacao, digitacao de `ZERAR` e cria snapshot local antes da limpeza.
+- No modo cloud, as operacoes sincronizam por `upsertRecord()` e `deleteRecord()` por registro, sem reativar `saveState()` em lote.
 
-## Heranca preservada da V18.4/V18.2
+## Heranca preservada da V18.5/V18.2
 
-- `index.html` carrega `supabase-loader.js` antes dos adapters.
-- `auth.js` governa login, restauracao de sessao e logout.
-- `repository.js` governa carga e gravacao por adapter.
-- `SupabaseRepository` le tabelas com paginacao e nao faz reconciliacao por ausencia.
-- `SupabaseRepository.saveState()` segue bloqueado por seguranca; use `upsertRecord()` e `deleteRecord()` por registro.
-- Criacao, edicao, exclusao e troca de status sincronizam por registro quando houver repository cloud ativo.
-- `config.js` e `config.example.js` continuam sem usuarios locais e sem senhas.
-- Mascara de CPF/CPF-CNPJ, financeiro derivado de reserva e supressao da moldura vazia do status sincronizado permanecem preservados.
+- `SupabaseRepository.saveState()` segue bloqueado por seguranca contra gravacao destrutiva em lote.
+- `SupabaseRepository` continua lendo tabelas com paginacao e sem reconciliacao por ausencia.
+- Login, Auth, RLS, mapeadores e chaves publicaveis seguem a estrutura homologada.
+- Trilhas de data/hora de reservas da V18.5 permanecem preservadas.
 
 ## Limite proposital
 
-A versao dedicada ao backup foi mantida separada. Backup e restauracao mexem em persistencia e recuperacao de dados, por isso devem receber uma rodada propria de implementacao e testes.
+O snapshot criado antes de importar/substituir/zerar fica no navegador local. Ele e uma rede de seguranca imediata, mas nao substitui o arquivo de backup baixado e armazenado fora do sistema.
 
 ## Registro Tecnico
 
-O Registro Tecnico de Evolucao registra a auditoria Genspark, o confronto Claude x Genspark, a decisao de avancar por partes, a trava contra perda de dados em nuvem e os polimentos incrementais posteriores.
+O Registro Tecnico de Evolucao registra a V18.6 como a rodada propria de governanca de backup, separada dos polimentos anteriores para reduzir risco de regressao.
