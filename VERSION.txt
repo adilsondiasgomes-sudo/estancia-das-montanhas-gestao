@@ -1,0 +1,27 @@
+Sistema de Gestao | Sitio Estancia das Montanhas
+Versao: V18.2
+Data: 08/08/2026
+
+Natureza:
+- Ativacao cloud minima e segura apos parecer Genspark, preservando a estrategia incremental definida com base nas auditorias Claude e Genspark.
+
+Melhorias implementadas:
+- `index.html` passou a carregar `supabase-loader.js` para disponibilizar o SDK Supabase quando `config.js` trouxer URL e anon key.
+- `auth.js` passou a conduzir login, restauracao de sessao e logout, com Supabase Auth quando configurado.
+- `repository.js` passou a ser o ponto unico de persistencia por adapter.
+- `SupabaseRepository` agora le dados com paginacao e nao apaga registros por ausencia no estado local.
+- Gravacao cloud de estado inteiro foi bloqueada para evitar perda de dados; o caminho cloud usa `upsertRecord()` e `deleteRecord()` por registro.
+- Fluxos principais de salvar formulario, excluir registro e alterar status de reserva passaram a enviar contexto de sincronizacao por registro.
+- `appMode:"cloud"` e `appMode:"cloud-ready"` foram alinhados nas fabricas de auth e repository.
+- Registro Tecnico atualizado com a consolidacao das auditorias e a justificativa da trava contra operacoes destrutivas.
+
+Limites assumidos:
+- Teste real de Supabase Auth, RLS e policies depende de projeto Supabase configurado.
+- `config.local.js` continua proibido no artefato cloud; `index.local.html` e `config.local.example.js` sao auxiliares privados de desenvolvimento.
+- Relatorios e modulos novos ficaram fora do escopo para nao degradar funcionalidades homologadas.
+
+Validacao recomendada:
+- Conferir que o ZIP cloud nao contem `config.local.js`.
+- Conferir que `index.html` principal nao referencia `config.local.js`.
+- Rodar `node --check` nos arquivos JavaScript.
+- Testar com Supabase real: login positivo, login negativo, leitura paginada, upsert de um registro e exclusao explicita de um registro de homologacao.

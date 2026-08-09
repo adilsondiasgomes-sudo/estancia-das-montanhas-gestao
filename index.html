@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estância das Montanhas | Gestão V18.2</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="locked">
+  <noscript><section class="boot-fallback"><h1>JavaScript desativado</h1><p>Este sistema precisa de JavaScript para carregar os dados e a interface operacional.</p></section></noscript>
+  <section class="boot-fallback" id="boot-fallback">
+    <h1>Falha ao iniciar o sistema</h1>
+    <p>Se esta mensagem permanecer visível, recarregue a página. Persistindo o erro, verifique `config.js`, `app.js` e a base local.</p>
+  </section>
+  <section class="login-screen">
+    <form class="login-card" id="login-form">
+      <button type="button" class="login-logo-large brand-open" data-action="open-brand" aria-label="Abrir identidade visual da Estância das Montanhas"></button>
+      <h1>Entrar no sistema</h1>
+      <p class="muted">Acesso gerencial e operacional | V18.2</p>
+      <label>E-mail<input id="login-email" type="email" autocomplete="username" required></label>
+      <label>Senha<input id="login-password" type="password" autocomplete="current-password" required></label>
+      <button class="primary" type="submit">Entrar</button>
+      <p class="login-hint">Ambiente cloud. Configure Supabase Auth e perfis antes de publicar.</p>
+      <p class="login-error" id="login-error" role="alert" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <aside class="sidebar">
+    <button type="button" class="sidebar-visual-brand brand-open" data-action="open-brand" aria-label="Abrir identidade visual da Estância das Montanhas"></button>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-card"><span>Perfil ativo</span><strong id="active-role">-</strong><button class="ghost full" id="logout">Sair</button></div>
+    <div class="sidebar-card"><span>WhatsApp comercial</span><a href="https://wa.me/5531986932446" target="_blank" rel="noreferrer">31 98693-2446</a></div>
+  </aside>
+
+  <main class="app">
+    <header class="topbar">
+      <div><p class="eyebrow">Painel operacional</p><h1 id="page-title">Visão Geral</h1></div>
+      <div class="topbar-actions"><span class="sync-pill" id="sync-status">Modo navegador local</span><button class="primary" id="quick-action" data-action="add-reservation">Nova reserva</button></div>
+    </header>
+    <section id="view"></section>
+  </main>
+
+  <dialog id="modal">
+    <form method="dialog" class="modal-card" id="modal-form">
+      <div class="modal-head"><h2 id="modal-title">Cadastro</h2><button class="icon-button" value="cancel" aria-label="Fechar">x</button></div>
+      <div id="modal-body" class="modal-body"></div>
+      <div class="modal-actions"><button class="ghost" value="cancel">Cancelar</button><button class="primary" id="modal-save" value="default">Salvar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="brand-viewer" class="brand-viewer" aria-label="Identidade visual Estância das Montanhas">
+    <button class="icon-button brand-close" data-action="close-brand" aria-label="Fechar">x</button>
+    <button class="logo-version brand-version" data-action="go-technical-logo" title="Registro Técnico de Evolução">V18.2</button>
+    <div class="brand-full-image" aria-hidden="true"></div>
+  </dialog>
+
+  <input id="restore-file" type="file" accept="application/json" hidden>
+  <script>
+    window.addEventListener('error', function(){ document.body.classList.add('boot-error'); });
+    window.addEventListener('unhandledrejection', function(){ document.body.classList.add('boot-error'); });
+  </script>
+  <script src="config.js"></script>
+  <script src="supabase-loader.js"></script>
+  <script src="permissions.js"></script>
+  <script src="state-validation.js"></script>
+  <script src="mappers.js"></script>
+  <script src="repository.js"></script>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+

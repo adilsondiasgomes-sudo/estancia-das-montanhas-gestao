@@ -1,0 +1,12 @@
+config.local.js
+.env
+.env.*
+local-data.json
+local-data.json.tmp
+local-data.json.bak
+local-data.json.corrupt-*
+*.bak
+*.tmp
+*.zip
+backup-estancia-*.json
+node_modules/
