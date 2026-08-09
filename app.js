@@ -1,6 +1,6 @@
-const APP_VERSION = "V18.3";
-const storageKey = "estancia-das-montanhas-gestao-v18-3";
-const authStorageKey = "estancia-das-montanhas-auth-v18-3";
+const APP_VERSION = "V18.4";
+const storageKey = "estancia-das-montanhas-gestao-v18-4";
+const authStorageKey = "estancia-das-montanhas-auth-v18-4";
 const config = window.ESTANCIA_CONFIG || {};
 // V17.2: celulas de tabela escapam texto por padrao; HTML do sistema exige marcador rawHtml().
 const appMode = config.appMode || "local-assisted";
@@ -185,7 +185,8 @@ const evolutionLog = [
   ["V18","Abertura da fase cloud por camadas: higiene de configuração, repositório limpo, schema Supabase completo com RLS, adapters preparatórios e Registro Técnico enriquecido com governança das auditorias."],
   ["V18.1","Correção pós-auditoria Genspark e confronto Claude: pacote cloud sem config.local.js, mappers reescritos, seleção de repository corrigida para não quebrar GitHub Pages, permissões alinhadas ao app e SQL ajustado para idempotência, bootstrap e coerência com o modelo local."],
   ["V18.2","Ativação cloud mínima e segura: login/sessão passam por auth.js, estado passa pelo repository, Supabase loader entra no runtime cloud e SupabaseRepository bloqueia gravação em lote destrutiva, usando leitura paginada e upsert/delete explícitos por registro."],
-  ["V18.3","Polimento da interface de homologação cloud: a mensagem técnica de estado sincronizado deixa de aparecer na barra superior e a tela de reservas remove botões redundantes do bloco de orientação, mantendo as ações principais no topo e na linha de cada reserva."]
+  ["V18.3","Polimento da interface de homologação cloud: a mensagem técnica de estado sincronizado deixa de aparecer na barra superior e a tela de reservas remove botões redundantes do bloco de orientação, mantendo as ações principais no topo e na linha de cada reserva."],
+  ["V18.4","Correção fina de homologação: máscaras visuais para CPF/CPF-CNPJ nos campos de lançamento, financeiro passa a refletir sinal e saldo de reservas sem lançamento vinculado, e o status sincronizado oculto deixa de reservar moldura vazia."]
 ];
 const schemaByView = { reservations:"reservation", guests:"guest", clients:"client", spaces:"space", finance:"transaction", maintenance:"maintenance", cleaning:"cleaning", laundry:"laundry", inventory:"inventory", utilities:"utility", employees:"employee" };
 const moneyFields = new Set(["baseRate","total","paid","amount","cost","replacementValue","rate"]);
@@ -230,6 +231,7 @@ function hasOperationalRecords(data){
 function loadStateSync(){
   const fallbackKeys=[
     storageKey,
+    "estancia-das-montanhas-gestao-v18-3",
     "estancia-das-montanhas-gestao-v18-2",
     "estancia-das-montanhas-gestao-v18-1",
     "estancia-das-montanhas-gestao-v18",
@@ -369,6 +371,26 @@ function wireCurrencyInputs(root=document){
     input.addEventListener('blur',()=>{ input.value=formatCurrencyInputValue(input.value); });
   });
 }
+function formatCpfValue(v){
+  const d=normalizeDoc(v).slice(0,11);
+  if(!d) return '';
+  return d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+}
+function formatCnpjValue(v){
+  const d=normalizeDoc(v).slice(0,14);
+  if(!d) return '';
+  return d.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+}
+function formatCpfCnpjValue(v){ return normalizeDoc(v).length>11 ? formatCnpjValue(v) : formatCpfValue(v); }
+function wireDocumentInputs(root=document){
+  root.querySelectorAll('[data-cpf-input="true"],[data-document-input="true"]').forEach(input=>{
+    const formatter=input.dataset.documentInput==="true" ? formatCpfCnpjValue : formatCpfValue;
+    const apply=()=>{ input.value=formatter(input.value); input.setSelectionRange(input.value.length,input.value.length); };
+    input.addEventListener('input',apply);
+    input.addEventListener('blur',apply);
+    input.value=formatter(input.value);
+  });
+}
 function parseNumber(v){ return Number(String(v||'').replace(',','.'))||0; }
 function normalizeDoc(v){ return String(v||'').replace(/\D/g,''); }
 function esc(v){ return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
@@ -428,11 +450,13 @@ function renderSyncStatus(){
   const quietStates = new Set(["synced","browser"]);
   if(quietStates.has(syncStatus.state)){
     el.hidden = true;
+    el.style.display = "none";
     el.textContent = "";
     el.dataset.state = syncStatus.state;
     return;
   }
   el.hidden = false;
+  el.style.display = "";
   el.textContent=syncStatus.message;
   el.dataset.state=syncStatus.state;
 }
@@ -514,8 +538,9 @@ function dashboard(){
   const nextWeek=addDaysIso(todayIso(),7);
   const nextCheckins=state.reservations.filter(r=>r.status==='Confirmada' && String(r.start||'')>=todayIso() && String(r.start||'')<=nextWeek).length;
   const upcoming=upcomingReservations(5);
-  const revenue=state.transactions.filter(t=>t.type==='Entrada').reduce((s,t)=>s+Number(t.amount),0);
-  const expense=state.transactions.filter(t=>t.type==='Saída').reduce((s,t)=>s+Number(t.amount),0);
+  const ledger=financeLedgerRows();
+  const revenue=ledger.filter(t=>t.type==='Entrada' && t.status==='Pago').reduce((s,t)=>s+Number(t.amount),0);
+  const expense=ledger.filter(t=>t.type==='Saída').reduce((s,t)=>s+Number(t.amount),0);
   const pending=dashboardPendingItems();
   const upcomingContent=upcoming.length?upcoming.map((r,i)=>dashboardUpcomingCard(r,i)).join(''):'<p class="muted">Nenhuma chegada futura em aberto. Cadastre a próxima locação integral pelo botão principal.</p>';
   const pendingContent=`<div class="dashboard-pending-grid">
@@ -847,8 +872,22 @@ function transactionClient(t){
   const r=byId(state.reservations,t.reservationId);
   return byId(state.clients,r.clientId);
 }
+function reservationFinanceRows(){
+  const reservationsWithTransactions=new Set(state.transactions.map(t=>t.reservationId).filter(Boolean));
+  return state.reservations.filter(r=>r.id && !reservationsWithTransactions.has(r.id) && r.status!=='Cancelada').flatMap(r=>{
+    const c=byId(state.clients,r.clientId);
+    const paid=Number(r.paid||0);
+    const total=Number(r.total||0);
+    const balance=Math.max(total-paid,0);
+    const rows=[];
+    if(paid>0) rows.push({id:`derived-paid-${r.id}`,_derived:true,date:r.start,type:'Entrada',clientId:r.clientId,reservationId:r.id,category:'Sinal de reserva',description:`Sinal/antecipação de ${c.name||'contratante'}`,amount:paid,status:'Pago'});
+    if(balance>0) rows.push({id:`derived-balance-${r.id}`,_derived:true,date:r.start,type:'Entrada',clientId:r.clientId,reservationId:r.id,category:'Saldo de reserva',description:`Saldo previsto de ${c.name||'contratante'}`,amount:balance,status:'Pendente'});
+    return rows;
+  });
+}
+function financeLedgerRows(){ return [...state.transactions,...reservationFinanceRows()]; }
 function filteredTransactions(){
-  return state.transactions.filter(t=>{
+  return financeLedgerRows().filter(t=>{
     if(financeFilters.from && String(t.date||'')<financeFilters.from) return false;
     if(financeFilters.to && String(t.date||'')>financeFilters.to) return false;
     if(financeFilters.type!=='all' && t.type!==financeFilters.type) return false;
@@ -877,7 +916,7 @@ function financeFilterSelect(name,label,options,value){
   return `<label>${label}<select name="${name}" data-finance-filter="${esc(name)}">${options.map(([v,t])=>`<option value="${esc(v)}" ${String(v)===String(value)?'selected':''}>${esc(t)}</option>`).join('')}</select></label>`;
 }
 function financeFiltersPanel(){
-  const categories=[...new Set(state.transactions.map(t=>t.category).filter(Boolean))].sort();
+  const categories=[...new Set(financeLedgerRows().map(t=>t.category).filter(Boolean))].sort();
   const reservationOptions=[['all','Todas'],...state.reservations.map(r=>[r.id,`${byId(state.clients,r.clientId).name||'Cliente'} · ${dateBr(r.start)} a ${dateBr(r.end)}`])];
   return `<form id="finance-filters" class="finance-filters">
     <label>De<input type="date" name="from" data-finance-filter="from" value="${esc(financeFilters.from)}"></label>
@@ -900,7 +939,7 @@ function finance(){
   const rows=filteredTransactions();
   const content=`${financeSummaryCards(rows)}${financeFiltersPanel()}${table(['Data','Tipo','Contratante','Reserva','Categoria','Descrição','Valor','Status',''], rows.map(t=>{
     const c=transactionClient(t), r=byId(state.reservations,t.reservationId);
-    return [dateBr(t.date),t.type,c.name||'-',r.id?`${dateBr(r.start)} a ${dateBr(r.end)}`:'-',t.category,t.description,rawHtml(`<span class="${t.type==='Entrada'?'money-positive':'money-negative'}">${money(t.amount)}</span>`),rawHtml(badge(t.status)),rawHtml(rowActions('transaction',t.id))];
+    return [dateBr(t.date),t.type,c.name||'-',r.id?`${dateBr(r.start)} a ${dateBr(r.end)}`:'-',t.category,t.description,rawHtml(`<span class="${t.type==='Entrada'?'money-positive':'money-negative'}">${money(t.amount)}</span>`),rawHtml(badge(t.status)),rawHtml(t._derived?'<span class="muted">Reserva</span>':rowActions('transaction',t.id))];
   }))}`;
   return section('Financeiro','Movimentação estruturada com filtros por período, contratante, reserva, categoria e status.','add-transaction', content); 
 }
@@ -983,6 +1022,8 @@ function validateFormValues(type,values,id=null){
       return `Conflito de agenda com ${c.name||'cliente'} em ${s.name||'espaço'} (${scheduleLabel(conflict)}). Ajuste período, horário, espaço ou locação exclusiva.`;
     }
   }
+  if(values.document) values.document=normalizeDocument(values.document);
+  if(values.contractorCpf) values.contractorCpf=normalizeCpf(values.contractorCpf);
   if(type==='guest'){
     const r=byId(state.reservations,values.reservationId);
     if(!r.id) return 'Reserva vinculada não encontrada.';
@@ -991,6 +1032,7 @@ function validateFormValues(type,values,id=null){
   return '';
 }
 function normalizeCpf(v){ const d=normalizeDoc(v).slice(0,11); return d.length===11?d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4'):String(v||''); }
+function normalizeDocument(v){ const d=normalizeDoc(v); return d.length>11 ? formatCnpjValue(d) : normalizeCpf(d); }
 function linkedImpact(type,id){
   if(type==='client'){
     const active=state.reservations.filter(r=>r.clientId===id && !['Cancelada','Finalizada'].includes(r.status)).length;
@@ -1022,6 +1064,7 @@ function openForm(type,id=null,defaults={}){
   document.querySelector('#modal-save').textContent=type==='guest'&&!id?'Salvar convidado':'Salvar';
   modal.showModal();
   wireCurrencyInputs(document.querySelector('#modal-form'));
+  wireDocumentInputs(document.querySelector('#modal-form'));
   if(type==='guest') wireGuestForm(item);
   document.querySelector('#modal-save').onclick=e=>{
     e.preventDefault();
@@ -1062,7 +1105,8 @@ function formField([name,label,type,options,extra=''],item){
   }
   if(type==='textarea') return `<label class="${extra}">${safeLabel}<textarea name="${safeName}">${esc(val)}</textarea></label>`;
   if(type==='currency') return `<label class="${extra}">${safeLabel}<input name="${safeName}" type="text" inputmode="numeric" data-currency-input="true" value="${val?esc(money(val)):''}" placeholder="R$ 0,00"></label>`;
-  return `<label class="${extra}">${safeLabel}<input name="${safeName}" type="${safeType}" value="${esc(val)}"></label>`;
+  const maskAttr = ["cpf","contractorCpf"].includes(name) ? ' inputmode="numeric" data-cpf-input="true"' : name==="document" ? ' inputmode="numeric" data-document-input="true"' : '';
+  return `<label class="${extra}">${safeLabel}<input name="${safeName}" type="${safeType}"${maskAttr} value="${esc(val)}"></label>`;
 }
 function guestSequenceLayout(item,id){
   const visibleNames = new Set(["fullName","cpf","address","notes"]);
@@ -1135,7 +1179,7 @@ function wireGuestForm(item){
 }
 function canUseForm(type){ return isManager() || !['transaction','employee','space'].includes(type); }
 function removeItem(type,id){ if(!isManager()) return alert('Exclusões são restritas ao perfil gerencial.'); const impact=linkedImpact(type,id); if(impact) return alert(`Exclusão bloqueada para preservar integridade referencial. ${impact}`); const schema=schemas[type]; state[schema.list]=state[schema.list].filter(x=>x.id!==id); if(saveState({sync:{list:schema.list,id,delete:true}})) render(); }
-function exportBackup(){ const blob=new Blob([JSON.stringify({app:'estancia-das-montanhas',version:"18.3",exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`backup-estancia-v18-3-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
+function exportBackup(){ const blob=new Blob([JSON.stringify({app:'estancia-das-montanhas',version:"18.4",exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`backup-estancia-v18-4-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
 function validateReferentialIntegrity(data){
   const clientIds=new Set((data.clients||[]).map(x=>x.id).filter(Boolean));
   const spaceIds=new Set((data.spaces||[]).map(x=>x.id).filter(Boolean));

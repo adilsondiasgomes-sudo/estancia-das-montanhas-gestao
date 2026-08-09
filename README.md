@@ -1,20 +1,20 @@
-# Sistema Estancia das Montanhas - V18.3
+# Sistema Estancia das Montanhas - V18.4
 
-Versao de polimento controlado da homologacao cloud, produzida a partir da V18.2 depois da validacao bem-sucedida em GitHub Pages e Supabase.
+Versao incremental de correcao e polimento da homologacao cloud, produzida a partir da V18.3.
 
 ## Veredito da rodada
 
-A V18.3 preserva a fundacao cloud homologada e evita alteracoes estruturais. O foco foi limpar a interface sem tocar em schema, RLS, Auth, mapeadores ou persistencia por registro.
+A V18.4 preserva a fundacao GitHub Pages/Supabase ja homologada e atua em tres pontos detectados em teste real: mascara de documento no lancamento, leitura financeira de reservas com sinal e remocao completa da moldura vazia do status sincronizado.
 
-## Escopo real da V18.3
+## Escopo real da V18.4
 
-- A mensagem tecnica de estado sincronizado deixa de aparecer na barra superior.
-- A pilula de sincronizacao continua ativa para estados que exigem atencao: carregamento, pendencia ou erro.
-- A tela de Reservas remove botoes redundantes no bloco de orientacao.
-- O fluxo principal permanece claro: nova reserva no topo e acoes especificas por reserva nos icones da linha.
-- Registro Tecnico, identificacao de versao e backup foram alinhados para V18.3.
+- Campos de CPF e CPF/CNPJ passam a aplicar mascara visual durante a digitacao.
+- O financeiro passa a exibir valores derivados de reservas sem lancamento financeiro vinculado: sinal como entrada paga e saldo como pendencia.
+- Para evitar dupla contagem, reservas que ja possuem lancamento financeiro vinculado nao geram linhas derivadas.
+- A pilula de sincronizacao fica totalmente oculta nos estados saudaveis, sem reservar espaco visual.
+- Registro Tecnico, identificacao de versao e backup foram alinhados para V18.4.
 
-## Heranca preservada da V18.2
+## Heranca preservada da V18.3/V18.2
 
 - `index.html` carrega `supabase-loader.js` antes dos adapters.
 - `auth.js` governa login, restauracao de sessao e logout.
@@ -26,7 +26,7 @@ A V18.3 preserva a fundacao cloud homologada e evita alteracoes estruturais. O f
 
 ## Limite proposital
 
-Melhorias de mascara CPF/CNPJ e endereco estruturado ficaram fora desta rodada porque envolvem formularios, dados e possivel ajuste de mapeamento. Devem entrar em versao propria para reduzir risco de regressao.
+Endereco estruturado por rua, numero, bairro, cidade e UF deve entrar em rodada propria, pois envolve formularios, possivel mapeamento cloud e decisao de compatibilidade com dados ja salvos.
 
 ## Registro Tecnico
 

@@ -1,24 +1,27 @@
 Sistema de Gestao | Sitio Estancia das Montanhas
-Versao: V18.3
+Versao: V18.4
 Data: 09/08/2026
 
 Natureza:
-- Polimento controlado da interface em ambiente GitHub Pages/Supabase ja homologado.
+- Correcao incremental de homologacao, preservando GitHub Pages, Supabase, schema, RLS, Auth e persistencia por registro.
 
 Melhorias implementadas:
-- Mensagem tecnica "Estado carregado pelo repositorio ativo." suprimida da barra superior quando a sincronizacao esta saudavel.
-- Indicador de sincronizacao continua disponivel para estados relevantes: carregando, pendente ou erro.
-- Tela de Reservas ficou mais limpa, sem repeticao de botoes dentro do bloco "Fluxo de cadastramento".
-- Acoes principais foram preservadas: "Nova reserva" permanece no topo e as acoes por reserva continuam nos icones da linha.
-- Registro Tecnico recebeu entrada V18.3 documentando o polimento.
-- Backup exportado passa a identificar a versao V18.3.
+- Mascara visual de CPF nos campos de hospede e CPF do contratante.
+- Mascara visual de CPF/CNPJ no cadastro de cliente/contratante.
+- Normalizacao de CPF/CPF-CNPJ preservada ao salvar.
+- Financeiro passa a considerar sinais e saldos de reservas quando ainda nao ha lancamento financeiro vinculado.
+- Lancamentos derivados de reserva aparecem como leitura do painel e nao duplicam registros no banco.
+- Moldura vazia do status sincronizado foi suprimida quando o estado esta saudavel.
+- Registro Tecnico recebeu entrada V18.4 documentando a correcao.
+- Backup exportado passa a identificar a versao V18.4.
 
 Limites assumidos:
-- Nao houve mudanca de schema Supabase, RLS, Auth, mapeadores ou fluxo de persistencia.
-- Melhorias de mascara CPF/CNPJ e endereco estruturado ficam para versao posterior, por envolverem formularios e dados.
+- Nao houve mudanca de schema Supabase, RLS, Auth, mapeadores ou fluxo de persistencia cloud.
+- Endereco estruturado por campos separados fica para uma versao propria, por envolver formulario e possivel mapeamento adicional.
 
 Validacao recomendada:
-- Abrir a pagina publicada e verificar que a mensagem tecnica sincronizada nao aparece.
-- Confirmar que erros de sincronizacao ainda aparecem quando houver falha real.
-- Na tela Reservas, confirmar que nao ha botoes redundantes no bloco de orientacao.
+- Abrir cadastro de cliente e confirmar mascara CPF/CNPJ no campo CPF/CNPJ.
+- Abrir cadastro de hospede/convidado e confirmar mascara no CPF do hospede.
+- Lancar reserva com valor total e sinal, depois abrir Financeiro e conferir entrada paga e saldo pendente.
+- Confirmar que o chip de sincronizacao nao deixa moldura vazia quando estiver sincronizado.
 - Rodar `node --check` nos arquivos JavaScript antes de publicar.
