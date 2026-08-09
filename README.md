@@ -1,20 +1,21 @@
-# Sistema Estancia das Montanhas - V18.4
+# Sistema Estancia das Montanhas - V18.5
 
-Versao incremental de correcao e polimento da homologacao cloud, produzida a partir da V18.3.
+Versao incremental de polimento operacional, produzida a partir da V18.4.
 
 ## Veredito da rodada
 
-A V18.4 preserva a fundacao GitHub Pages/Supabase ja homologada e atua em tres pontos detectados em teste real: mascara de documento no lancamento, leitura financeira de reservas com sinal e remocao completa da moldura vazia do status sincronizado.
+A V18.5 preserva a fundacao GitHub Pages/Supabase ja homologada e acrescenta uma trilha temporal simples para reservas: data/hora de lancamento e data/hora de ultima alteracao.
 
-## Escopo real da V18.4
+## Escopo real da V18.5
 
-- Campos de CPF e CPF/CNPJ passam a aplicar mascara visual durante a digitacao.
-- O financeiro passa a exibir valores derivados de reservas sem lancamento financeiro vinculado: sinal como entrada paga e saldo como pendencia.
-- Para evitar dupla contagem, reservas que ja possuem lancamento financeiro vinculado nao geram linhas derivadas.
-- A pilula de sincronizacao fica totalmente oculta nos estados saudaveis, sem reservar espaco visual.
-- Registro Tecnico, identificacao de versao e backup foram alinhados para V18.4.
+- Reservas novas recebem `createdAt` no momento do cadastro.
+- Reservas editadas recebem `updatedAt` no momento da alteracao.
+- O mapeador Supabase reconhece `created_at` e `updated_at`, colunas ja existentes no schema cloud.
+- Os detalhes de agendamento exibem os carimbos de tempo para o perfil gerencial.
+- A pagina de filtros de reservas exibe a data/hora de lancamento de cada reserva.
+- Registro Tecnico, identificacao de versao e backup exportado foram alinhados para V18.5.
 
-## Heranca preservada da V18.3/V18.2
+## Heranca preservada da V18.4/V18.2
 
 - `index.html` carrega `supabase-loader.js` antes dos adapters.
 - `auth.js` governa login, restauracao de sessao e logout.
@@ -23,10 +24,11 @@ A V18.4 preserva a fundacao GitHub Pages/Supabase ja homologada e atua em tres p
 - `SupabaseRepository.saveState()` segue bloqueado por seguranca; use `upsertRecord()` e `deleteRecord()` por registro.
 - Criacao, edicao, exclusao e troca de status sincronizam por registro quando houver repository cloud ativo.
 - `config.js` e `config.example.js` continuam sem usuarios locais e sem senhas.
+- Mascara de CPF/CPF-CNPJ, financeiro derivado de reserva e supressao da moldura vazia do status sincronizado permanecem preservados.
 
 ## Limite proposital
 
-Endereco estruturado por rua, numero, bairro, cidade e UF deve entrar em rodada propria, pois envolve formularios, possivel mapeamento cloud e decisao de compatibilidade com dados ja salvos.
+A versao dedicada ao backup foi mantida separada. Backup e restauracao mexem em persistencia e recuperacao de dados, por isso devem receber uma rodada propria de implementacao e testes.
 
 ## Registro Tecnico
 

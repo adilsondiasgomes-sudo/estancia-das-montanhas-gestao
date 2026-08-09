@@ -1,6 +1,6 @@
-const APP_VERSION = "V18.4";
-const storageKey = "estancia-das-montanhas-gestao-v18-4";
-const authStorageKey = "estancia-das-montanhas-auth-v18-4";
+const APP_VERSION = "V18.5";
+const storageKey = "estancia-das-montanhas-gestao-v18-5";
+const authStorageKey = "estancia-das-montanhas-auth-v18-5";
 const config = window.ESTANCIA_CONFIG || {};
 // V17.2: celulas de tabela escapam texto por padrao; HTML do sistema exige marcador rawHtml().
 const appMode = config.appMode || "local-assisted";
@@ -186,7 +186,8 @@ const evolutionLog = [
   ["V18.1","Correção pós-auditoria Genspark e confronto Claude: pacote cloud sem config.local.js, mappers reescritos, seleção de repository corrigida para não quebrar GitHub Pages, permissões alinhadas ao app e SQL ajustado para idempotência, bootstrap e coerência com o modelo local."],
   ["V18.2","Ativação cloud mínima e segura: login/sessão passam por auth.js, estado passa pelo repository, Supabase loader entra no runtime cloud e SupabaseRepository bloqueia gravação em lote destrutiva, usando leitura paginada e upsert/delete explícitos por registro."],
   ["V18.3","Polimento da interface de homologação cloud: a mensagem técnica de estado sincronizado deixa de aparecer na barra superior e a tela de reservas remove botões redundantes do bloco de orientação, mantendo as ações principais no topo e na linha de cada reserva."],
-  ["V18.4","Correção fina de homologação: máscaras visuais para CPF/CPF-CNPJ nos campos de lançamento, financeiro passa a refletir sinal e saldo de reservas sem lançamento vinculado, e o status sincronizado oculto deixa de reservar moldura vazia."]
+  ["V18.4","Correção fina de homologação: máscaras visuais para CPF/CPF-CNPJ nos campos de lançamento, financeiro passa a refletir sinal e saldo de reservas sem lançamento vinculado, e o status sincronizado oculto deixa de reservar moldura vazia."],
+  ["V18.5","Polimento operacional antes da rodada de backup: reservas passam a guardar data/hora de lançamento e última alteração no app, compatíveis com created_at/updated_at do Supabase, com exibição discreta nos detalhes e filtros de reservas."]
 ];
 const schemaByView = { reservations:"reservation", guests:"guest", clients:"client", spaces:"space", finance:"transaction", maintenance:"maintenance", cleaning:"cleaning", laundry:"laundry", inventory:"inventory", utilities:"utility", employees:"employee" };
 const moneyFields = new Set(["baseRate","total","paid","amount","cost","replacementValue","rate"]);
@@ -231,6 +232,7 @@ function hasOperationalRecords(data){
 function loadStateSync(){
   const fallbackKeys=[
     storageKey,
+    "estancia-das-montanhas-gestao-v18-4",
     "estancia-das-montanhas-gestao-v18-3",
     "estancia-das-montanhas-gestao-v18-2",
     "estancia-das-montanhas-gestao-v18-1",
@@ -596,7 +598,7 @@ function calendarChip(r){ const c=byId(state.clients,r.clientId); const expired=
 function agendaDetail(r,closeAction='close-calendar-detail'){
   if(!r.id) return `<h2>Detalhes</h2><p class="muted">Nenhum agendamento cadastrado.</p>`;
   const c=byId(state.clients,r.clientId), s=byId(state.spaces,r.spaceId), guests=state.guests.filter(g=>g.reservationId===r.id);
-  return `<button class="ghost material-close" data-action="${esc(closeAction)}" data-id="">Fechar</button><p class="eyebrow">Detalhe do agendamento</p><h2>${esc(c.name)}</h2><p class="muted">${esc(r.type)} · ${esc(r.packageName)}</p><div class="client-facts agenda-facts">${fact('Período',`${dateBr(r.start)} a ${dateBr(r.end)}`)}${fact('Espaço',s.name||'-')}${fact('Hóspedes',`${guests.length}/${capacityForReservation(r)}`)}${isManager()?fact('Valor',`${money(r.paid)} / ${money(r.total)}`):fact('Status',r.status)}</div><div class="notice"><strong>${badge(r.status)}</strong><span>${esc(r.checklist||'Sem checklist registrado.')}</span></div><div class="actions"><button data-action="add-guest-reservation" data-id="${esc(r.id)}">Cadastrar hóspede</button><button data-action="reservation-documents" data-id="${esc(r.id)}">Documentos</button><button data-action="edit-reservation" data-id="${esc(r.id)}">Editar reserva</button></div>`;
+  return `<button class="ghost material-close" data-action="${esc(closeAction)}" data-id="">Fechar</button><p class="eyebrow">Detalhe do agendamento</p><h2>${esc(c.name)}</h2><p class="muted">${esc(r.type)} · ${esc(r.packageName)}</p><div class="client-facts agenda-facts">${fact('Período',`${dateBr(r.start)} a ${dateBr(r.end)}`)}${fact('Espaço',s.name||'-')}${fact('Hóspedes',`${guests.length}/${capacityForReservation(r)}`)}${isManager()?reservationAuditFacts(r):''}${isManager()?fact('Valor',`${money(r.paid)} / ${money(r.total)}`):fact('Status',r.status)}</div><div class="notice"><strong>${badge(r.status)}</strong><span>${esc(r.checklist||'Sem checklist registrado.')}</span></div><div class="actions"><button data-action="add-guest-reservation" data-id="${esc(r.id)}">Cadastrar hóspede</button><button data-action="reservation-documents" data-id="${esc(r.id)}">Documentos</button><button data-action="edit-reservation" data-id="${esc(r.id)}">Editar reserva</button></div>`;
 }
 function reservations(){
   const workflow=`<div class="reservation-workflow">
@@ -621,7 +623,7 @@ function reservationFilters(){
 }
 function reservationFilterRow(r,i){
   const c=byId(state.clients,r.clientId), guests=state.guests.filter(g=>g.reservationId===r.id), seq=String(i+1).padStart(2,'0');
-  return `<article class="reservation-filter-row"><strong>${seq}</strong><div><button class="text-link contractor-link" data-action="reservation-detail" data-id="${esc(r.id)}">${esc(c.name||'Contratante não identificado')}</button><span>${esc(r.type||'-')} · ${dateBr(r.start)} a ${dateBr(r.end)}</span></div><div>${badge(r.status)}</div><div><span>${guests.length}/${capacityForReservation(r)} pessoas</span>${isManager()?`<strong>${money(r.paid)} / ${money(r.total)}</strong>`:''}</div><div class="row-actions"><button class="small" data-action="add-guest-reservation" data-id="${esc(r.id)}">Hóspedes</button><button class="small" data-action="reservation-documents" data-id="${esc(r.id)}">Documentos</button><button class="small" data-action="edit-reservation" data-id="${esc(r.id)}">Editar</button></div></article>`;
+  return `<article class="reservation-filter-row"><strong>${seq}</strong><div><button class="text-link contractor-link" data-action="reservation-detail" data-id="${esc(r.id)}">${esc(c.name||'Contratante não identificado')}</button><span>${esc(r.type||'-')} · ${dateBr(r.start)} a ${dateBr(r.end)}</span>${isManager()?`<small>Lançada em ${esc(dateTimeBr(r.createdAt))}</small>`:''}</div><div>${badge(r.status)}</div><div><span>${guests.length}/${capacityForReservation(r)} pessoas</span>${isManager()?`<strong>${money(r.paid)} / ${money(r.total)}</strong>`:''}</div><div class="row-actions"><button class="small" data-action="add-guest-reservation" data-id="${esc(r.id)}">Hóspedes</button><button class="small" data-action="reservation-documents" data-id="${esc(r.id)}">Documentos</button><button class="small" data-action="edit-reservation" data-id="${esc(r.id)}">Editar</button></div></article>`;
 }
 function reservationEventDetail(id){
   const r=byId(state.reservations,id);
@@ -642,6 +644,10 @@ function reservationDocuments(){
   return `<section class="card"><div class="section-head"><div><h2>Documentos — ${esc(c.name||'-')}</h2><p>${esc(r.type||'-')} · ${dateBr(r.start)} a ${dateBr(r.end)}</p></div><button data-action="go-view" data-id="reservationFilters">Voltar</button></div><div class="grid cols-2 document-options">${options.map(([id,label,desc])=>`<button class="card document-option" data-action="open-document" data-id="${r.id}" data-status="${id}"><strong>${esc(label)}</strong><span>${esc(desc)}</span></button>`).join('')}</div></section>`;
 }
 function dateTimeBr(v){ return v ? new Date(v).toLocaleString('pt-BR') : 'Não registrado'; }
+function reservationAuditFacts(r){
+  const updated=r.updatedAt ? dateTimeBr(r.updatedAt) : 'Não registrado';
+  return `${fact('Lançada em',dateTimeBr(r.createdAt))}${fact('Atualizada em',updated)}`;
+}
 function documentNumber(r){ const start=String(r.start||''); const y=start.slice(0,4)||String(new Date().getFullYear()); const mmdd=start.slice(5,10).replace('-','')||'0000'; const suffix=String(r.id||'0000').replace(/[^a-z0-9]/gi,'').slice(0,4).toUpperCase().padEnd(4,'0'); return `${y}-${mmdd}-${suffix}`; }
 function documentTitle(type){ return {receipt:'Recibo de pagamento',contract:'Contrato-resumo',guestSheet:'Ficha de hóspedes',stayReceipt:'Comprovante de check-in/check-out'}[type]||'Documento da reserva'; }
 function documentTitlePrint(type){ return {receipt:'RECIBO DE PAGAMENTO',contract:'CONTRATO-RESUMO',guestSheet:'FICHA DE HÓSPEDES',stayReceipt:'COMPROVANTE DE CHECK-IN/CHECK-OUT'}[type]||'DOCUMENTO DA RESERVA'; }
@@ -1073,8 +1079,15 @@ function openForm(type,id=null,defaults={}){
     const error=validateFormValues(type,values,id);
     if(error) return alert(error);
     const saved=id?Object.assign(item,values):{id:uid(),...values};
+    if(type==='reservation'){
+      const now=new Date().toISOString();
+      if(!id && !saved.createdAt) saved.createdAt=now;
+      saved.updatedAt=now;
+      selectedCalendarReservationId=saved.id;
+      selectedCalendarDay=saved.start||null;
+      syncCalendarMonthFromReservation(saved);
+    }
     if(!id) list.push(saved);
-    if(type==='reservation'){ selectedCalendarReservationId=saved.id; selectedCalendarDay=saved.start||null; syncCalendarMonthFromReservation(saved); }
     if(!saveState({sync:{list:schema.list,item:saved}})) return;
     if(type==='guest'&&!id){ afterSequentialGuestSave(saved); return; }
     modal.close();
@@ -1179,7 +1192,7 @@ function wireGuestForm(item){
 }
 function canUseForm(type){ return isManager() || !['transaction','employee','space'].includes(type); }
 function removeItem(type,id){ if(!isManager()) return alert('Exclusões são restritas ao perfil gerencial.'); const impact=linkedImpact(type,id); if(impact) return alert(`Exclusão bloqueada para preservar integridade referencial. ${impact}`); const schema=schemas[type]; state[schema.list]=state[schema.list].filter(x=>x.id!==id); if(saveState({sync:{list:schema.list,id,delete:true}})) render(); }
-function exportBackup(){ const blob=new Blob([JSON.stringify({app:'estancia-das-montanhas',version:"18.4",exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`backup-estancia-v18-4-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
+function exportBackup(){ const blob=new Blob([JSON.stringify({app:'estancia-das-montanhas',version:"18.5",exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`backup-estancia-v18-5-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
 function validateReferentialIntegrity(data){
   const clientIds=new Set((data.clients||[]).map(x=>x.id).filter(Boolean));
   const spaceIds=new Set((data.spaces||[]).map(x=>x.id).filter(Boolean));

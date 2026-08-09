@@ -1,27 +1,26 @@
 Sistema de Gestao | Sitio Estancia das Montanhas
-Versao: V18.4
+Versao: V18.5
 Data: 09/08/2026
 
 Natureza:
-- Correcao incremental de homologacao, preservando GitHub Pages, Supabase, schema, RLS, Auth e persistencia por registro.
+- Polimento operacional incremental antes da rodada dedicada ao backup.
 
 Melhorias implementadas:
-- Mascara visual de CPF nos campos de hospede e CPF do contratante.
-- Mascara visual de CPF/CNPJ no cadastro de cliente/contratante.
-- Normalizacao de CPF/CPF-CNPJ preservada ao salvar.
-- Financeiro passa a considerar sinais e saldos de reservas quando ainda nao ha lancamento financeiro vinculado.
-- Lancamentos derivados de reserva aparecem como leitura do painel e nao duplicam registros no banco.
-- Moldura vazia do status sincronizado foi suprimida quando o estado esta saudavel.
-- Registro Tecnico recebeu entrada V18.4 documentando a correcao.
-- Backup exportado passa a identificar a versao V18.4.
+- Reservas novas passam a registrar data/hora de lancamento no campo interno createdAt.
+- Reservas editadas passam a registrar data/hora da ultima alteracao no campo interno updatedAt.
+- Mapeamento Supabase de reservas passou a reconhecer created_at e updated_at, aproveitando colunas ja existentes no banco.
+- Detalhes de agendamento exibem, para perfil gerencial, "Lancada em" e "Atualizada em".
+- Filtros de reservas exibem, para perfil gerencial, a data/hora de lancamento de cada reserva.
+- Identificacao visual, Registro Tecnico e backup exportado foram alinhados para V18.5.
+- A V18.5 herda dados locais da V18.4 na primeira abertura.
 
 Limites assumidos:
-- Nao houve mudanca de schema Supabase, RLS, Auth, mapeadores ou fluxo de persistencia cloud.
-- Endereco estruturado por campos separados fica para uma versao propria, por envolver formulario e possivel mapeamento adicional.
+- Nao houve mudanca de schema Supabase, RLS, Auth ou fluxo de persistencia cloud.
+- Auditoria por usuario especifico fica para rodada posterior, se adotarmos campo proprio de autoria no schema.
+- A proxima rodada dedicada ao backup permanece separada para evitar misturar persistencia, restauracao e polimentos visuais.
 
 Validacao recomendada:
-- Abrir cadastro de cliente e confirmar mascara CPF/CNPJ no campo CPF/CNPJ.
-- Abrir cadastro de hospede/convidado e confirmar mascara no CPF do hospede.
-- Lancar reserva com valor total e sinal, depois abrir Financeiro e conferir entrada paga e saldo pendente.
-- Confirmar que o chip de sincronizacao nao deixa moldura vazia quando estiver sincronizado.
+- Criar uma nova reserva e abrir o detalhe do agendamento para conferir "Lancada em" e "Atualizada em".
+- Editar a reserva e conferir se "Atualizada em" muda.
+- Abrir Filtros de Reservas e confirmar a exibicao discreta da data/hora de lancamento.
 - Rodar `node --check` nos arquivos JavaScript antes de publicar.

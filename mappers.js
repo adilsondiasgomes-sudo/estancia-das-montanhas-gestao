@@ -15,7 +15,8 @@
       end:"end_date", endTime:"end_time", guests:"guests",
       exclusiveUse:"exclusive_use", confirmationDeadline:"confirmation_deadline",
       total:"total", paid:"paid", status:"status", checklist:"checklist",
-      checkinAt:"checkin_at", checkoutAt:"checkout_at"
+      checkinAt:"checkin_at", checkoutAt:"checkout_at",
+      createdAt:"created_at", updatedAt:"updated_at"
     },
     guest: {
       id:"id", clientId:"client_id", contractorCpf:"contractor_cpf",

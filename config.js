@@ -3,7 +3,7 @@ window.ESTANCIA_CONFIG = {
   supabaseAnonKey: "sb_publishable_VpkwpJlYvtbNdi4W5wTggQ_muc4TkfX",
   businessName: "Sitio Estancia das Montanhas",
   whatsapp: "5531986932446",
-  version: "18.4",
+  version: "18.5",
   visualMode: "brand-photo",
   appMode: "cloud",
   environmentMode: "operational",
