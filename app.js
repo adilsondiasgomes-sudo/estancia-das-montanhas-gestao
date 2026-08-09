@@ -1,6 +1,6 @@
-const APP_VERSION = "V18.2";
-const storageKey = "estancia-das-montanhas-gestao-v18-2";
-const authStorageKey = "estancia-das-montanhas-auth-v18-2";
+const APP_VERSION = "V18.3";
+const storageKey = "estancia-das-montanhas-gestao-v18-3";
+const authStorageKey = "estancia-das-montanhas-auth-v18-3";
 const config = window.ESTANCIA_CONFIG || {};
 // V17.2: celulas de tabela escapam texto por padrao; HTML do sistema exige marcador rawHtml().
 const appMode = config.appMode || "local-assisted";
@@ -184,7 +184,8 @@ const evolutionLog = [
   ["V17.6","Saneamento técnico homologado por auditoria executável: demo isolado, versão alinhada, sessão obediente à configuração, sincronização visível e validação referencial ampliada. Auditorias Claude e Genspark consolidaram a V17.6 como base local assistida estável."],
   ["V18","Abertura da fase cloud por camadas: higiene de configuração, repositório limpo, schema Supabase completo com RLS, adapters preparatórios e Registro Técnico enriquecido com governança das auditorias."],
   ["V18.1","Correção pós-auditoria Genspark e confronto Claude: pacote cloud sem config.local.js, mappers reescritos, seleção de repository corrigida para não quebrar GitHub Pages, permissões alinhadas ao app e SQL ajustado para idempotência, bootstrap e coerência com o modelo local."],
-  ["V18.2","Ativação cloud mínima e segura: login/sessão passam por auth.js, estado passa pelo repository, Supabase loader entra no runtime cloud e SupabaseRepository bloqueia gravação em lote destrutiva, usando leitura paginada e upsert/delete explícitos por registro."]
+  ["V18.2","Ativação cloud mínima e segura: login/sessão passam por auth.js, estado passa pelo repository, Supabase loader entra no runtime cloud e SupabaseRepository bloqueia gravação em lote destrutiva, usando leitura paginada e upsert/delete explícitos por registro."],
+  ["V18.3","Polimento da interface de homologação cloud: a mensagem técnica de estado sincronizado deixa de aparecer na barra superior e a tela de reservas remove botões redundantes do bloco de orientação, mantendo as ações principais no topo e na linha de cada reserva."]
 ];
 const schemaByView = { reservations:"reservation", guests:"guest", clients:"client", spaces:"space", finance:"transaction", maintenance:"maintenance", cleaning:"cleaning", laundry:"laundry", inventory:"inventory", utilities:"utility", employees:"employee" };
 const moneyFields = new Set(["baseRate","total","paid","amount","cost","replacementValue","rate"]);
@@ -229,6 +230,7 @@ function hasOperationalRecords(data){
 function loadStateSync(){
   const fallbackKeys=[
     storageKey,
+    "estancia-das-montanhas-gestao-v18-2",
     "estancia-das-montanhas-gestao-v18-1",
     "estancia-das-montanhas-gestao-v18",
     "estancia-das-montanhas-gestao-v17-6",
@@ -423,6 +425,14 @@ function render(){ if(!canAccess(currentView)) currentView=allowedModules()[0][0
 function renderSyncStatus(){
   const el=document.querySelector('#sync-status');
   if(!el) return;
+  const quietStates = new Set(["synced","browser"]);
+  if(quietStates.has(syncStatus.state)){
+    el.hidden = true;
+    el.textContent = "";
+    el.dataset.state = syncStatus.state;
+    return;
+  }
+  el.hidden = false;
   el.textContent=syncStatus.message;
   el.dataset.state=syncStatus.state;
 }
@@ -566,7 +576,6 @@ function agendaDetail(r,closeAction='close-calendar-detail'){
 function reservations(){
   const workflow=`<div class="reservation-workflow">
     <div><strong>Fluxo de cadastramento</strong><span>Cadastre primeiro o contratante, depois a reserva, e por fim os hóspedes/convidados vinculados ao CPF do contratante.</span></div>
-    <div class="actions"><button class="small" data-action="add-client">Novo contratante</button><button class="primary small" data-action="add-reservation">Nova reserva</button><button class="small" data-action="add-guest">Cadastrar hóspede/convidado</button></div>
   </div>`;
   const content=workflow + table(isManager()?['Cliente','Espaço','Período','Pacote','Hóspedes','Valor','Status','']:['Cliente','Espaço','Período','Pacote','Hóspedes','Status',''], state.reservations.map(r=>{const row=[byId(state.clients,r.clientId).name,byId(state.spaces,r.spaceId).name,`${dateBr(r.start)} a ${dateBr(r.end)}`,r.packageName,r.guests]; if(isManager()) row.push(`${money(r.paid)} / ${money(r.total)}`); row.push(rawHtml(badge(r.status)),rawHtml(rowActions('reservation',r.id,[['add-guest-reservation','Hóspedes',SVG_GUESTS],['reservation-documents','Documentos',SVG_DOCS]]))); return row;}));
   return section('Reservas','Controle de agenda, contratante, pacote, valores em Real, status e capacidade.','add-reservation', content);
@@ -1126,7 +1135,7 @@ function wireGuestForm(item){
 }
 function canUseForm(type){ return isManager() || !['transaction','employee','space'].includes(type); }
 function removeItem(type,id){ if(!isManager()) return alert('Exclusões são restritas ao perfil gerencial.'); const impact=linkedImpact(type,id); if(impact) return alert(`Exclusão bloqueada para preservar integridade referencial. ${impact}`); const schema=schemas[type]; state[schema.list]=state[schema.list].filter(x=>x.id!==id); if(saveState({sync:{list:schema.list,id,delete:true}})) render(); }
-function exportBackup(){ const blob=new Blob([JSON.stringify({app:'estancia-das-montanhas',version:"18.2",exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`backup-estancia-v18-2-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
+function exportBackup(){ const blob=new Blob([JSON.stringify({app:'estancia-das-montanhas',version:"18.3",exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`backup-estancia-v18-3-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
 function validateReferentialIntegrity(data){
   const clientIds=new Set((data.clients||[]).map(x=>x.id).filter(Boolean));
   const spaceIds=new Set((data.spaces||[]).map(x=>x.id).filter(Boolean));
@@ -1298,7 +1307,7 @@ async function hydrateStateFromRepository(){
   if(!activeRepository) return;
   try{
     const remote=await activeRepository.loadState();
-    if(remote){ state=applyV173Enhancements(normalizeState(remote,{allowDemo:remote.systemFlags?.mode==="demo"})); loadedRevision=Number(state.meta?.revision||0); localStorage.setItem(storageKey,JSON.stringify(state)); setSyncStatus("synced","Estado carregado pelo repositório ativo."); }
+    if(remote){ state=applyV173Enhancements(normalizeState(remote,{allowDemo:remote.systemFlags?.mode==="demo"})); loadedRevision=Number(state.meta?.revision||0); localStorage.setItem(storageKey,JSON.stringify(state)); setSyncStatus("synced",""); }
   }catch(err){ setSyncStatus("error",`Falha ao carregar repositório ativo: ${err.message}`); }
 }
 (async function boot(){
